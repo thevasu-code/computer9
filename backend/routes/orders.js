@@ -34,4 +34,28 @@ router.put('/:orderId', async (req, res) => {
   }
 });
 
+
+// Place a new order (from checkout, no userId required)
+router.post('/', async (req, res) => {
+  try {
+    const { billing, cart, total, paymentInfo } = req.body;
+    if (!billing || !cart || !total) return res.status(400).json({ error: 'Missing order data' });
+    const products = cart.map(item => ({
+      title: item.product.name,
+      quantity: item.quantity,
+      image: item.product.images && item.product.images.length > 0 ? item.product.images[0] : item.product.image || '',
+    }));
+    const order = new Order({
+      products,
+      total,
+      address: billing.address,
+      paymentInfo,
+    });
+    await order.save();
+    res.status(201).json(order);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
 module.exports = router;
