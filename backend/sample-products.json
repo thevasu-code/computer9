@@ -1,0 +1,52 @@
+[
+  {
+    "name": "Gaming Laptop XYZ",
+    "description": "High performance gaming laptop with RTX 4060, 16GB RAM, 1TB SSD.",
+    "price": 129999,
+    "originalPrice": 149999,
+    "image": "/file.svg",
+    "category": "Laptops",
+    "brand": "BrandX",
+    "stock": 10
+  },
+  {
+    "name": "Mechanical Keyboard Pro",
+    "description": "RGB, hot-swappable switches, aluminum body.",
+    "price": 7999,
+    "originalPrice": 9999,
+    "image": "/globe.svg",
+    "category": "Keyboards",
+    "brand": "KeyPro",
+    "stock": 25
+  },
+  {
+    "name": "4K Monitor UltraSharp",
+    "description": "27-inch, 144Hz, IPS, HDR, USB-C.",
+    "price": 34999,
+    "originalPrice": 39999,
+    "image": "/window.svg",
+    "category": "Monitors",
+    "brand": "ViewSharp",
+    "stock": 15
+  },
+  {
+    "name": "Wireless Mouse X200",
+    "description": "Ergonomic, 16000 DPI, rechargeable.",
+    "price": 2999,
+    "originalPrice": 3999,
+    "image": "/next.svg",
+    "category": "Mice",
+    "brand": "MouseX",
+    "stock": 40
+  },
+  {
+    "name": "Gaming Headset 7.1",
+    "description": "Surround sound, noise-cancelling mic, RGB.",
+    "price": 5999,
+    "originalPrice": 7999,
+    "image": "/vercel.svg",
+    "category": "Headsets",
+    "brand": "SoundMax",
+    "stock": 20
+  }
+]

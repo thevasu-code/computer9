@@ -5,7 +5,7 @@ const ProductSchema = new mongoose.Schema({
   description: { type: String },
   price: { type: Number, required: true },
   originalPrice: { type: Number },
-  image: { type: String },
+  images: [{ type: String }], // Array of image URLs
   category: { type: String },
   brand: { type: String },
   stock: { type: Number, default: 0 },
@@ -16,6 +16,10 @@ const ProductSchema = new mongoose.Schema({
     rating: Number,
     createdAt: { type: Date, default: Date.now }
   }],
+  tags: [{ type: String }],
+  richDescription: { type: String },
+  discount: { type: Number, default: 0 },
+  specs: [{ key: String, value: String }],
 }, { timestamps: true });
 
 module.exports = mongoose.model('Product', ProductSchema);
