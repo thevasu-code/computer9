@@ -1,29 +1,89 @@
 
 
-import { ShoppingCart } from "lucide-react";
+"use client";
+import React, { useEffect, useState } from "react";
+import MiniSearch from "minisearch";
+import ProductCard from "../components/ProductCard";
 
 export default function Home() {
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [miniSearch, setMiniSearch] = useState(null);
+  const [searchResults, setSearchResults] = useState([]);
+
+  useEffect(() => {
+    fetch("http://localhost:4000/products")
+      .then((res) => res.json())
+      .then((data) => {
+        setProducts(data);
+        setCategories([
+          ...new Set(data.map((p) => p.category).filter(Boolean)),
+        ]);
+        setLoading(false);
+        // Setup MiniSearch
+        const ms = new MiniSearch({
+          fields: ["title", "description", "category"],
+          storeFields: ["_id", "title", "price", "images", "category", "description"],
+        });
+        ms.addAll(data);
+        setMiniSearch(ms);
+      });
+  }, []);
+
+  let filteredProducts = selectedCategory
+    ? products.filter((p) => p.category === selectedCategory)
+    : products;
+
+  if (search && miniSearch) {
+    filteredProducts = miniSearch.search(search).map(r => r);
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-zinc-100 to-primary/20 dark:from-zinc-900 dark:via-black dark:to-primary/10 font-sans">
-      <div className="bg-white/90 dark:bg-zinc-900/90 rounded-2xl shadow-2xl p-12 max-w-xl w-full text-center border border-primary/10 relative overflow-hidden">
-        <div className="flex justify-center mb-6">
-          <span className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 text-primary shadow-lg animate-bounce-slow">
-            <ShoppingCart className="w-12 h-12" />
-          </span>
+    <div className="min-h-screen font-sans bg-gradient-to-br from-orange-100 via-orange-50 to-blue-50 dark:from-orange-900 dark:via-blue-900 dark:to-black">
+      <header className="w-full py-8 bg-gradient-to-r from-orange-500 via-orange-400 to-primary shadow-lg mb-8 rounded-b-3xl">
+        <h1 className="text-3xl font-extrabold text-white text-center drop-shadow-lg tracking-tight">
+          Computers & Hardwares Sales
+        </h1>
+      </header>
+      <main className="max-w-7xl mx-auto py-8 px-4">
+        <div className="mb-8 flex flex-wrap gap-3 justify-center">
+          <button
+            className={`px-4 py-2 rounded-full border font-medium transition-colors ${
+              !selectedCategory
+                ? "bg-primary text-white"
+                : "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 border-primary"
+            }`}
+            onClick={() => setSelectedCategory("")}
+          >
+            All
+          </button>
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              className={`px-4 py-2 rounded-full border font-medium transition-colors ${
+                selectedCategory === cat
+                  ? "bg-primary text-white"
+                  : "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 border-primary"
+              }`}
+              onClick={() => setSelectedCategory(cat)}
+            >
+              {cat}
+            </button>
+          ))}
         </div>
-        <h1 className="text-5xl font-extrabold text-primary mb-4 drop-shadow-lg tracking-tight">Coming Soon</h1>
-        <p className="text-lg text-zinc-700 dark:text-zinc-200 mb-4 font-medium">A new era of computer & hardware shopping is on the way.</p>
-        <div className="mb-6">
-          <span className="inline-block bg-primary/10 text-primary font-bold px-4 py-2 rounded-full text-lg shadow-sm">
-            Stay connected: <a href="tel:9751978686" className="hover:underline">9751978686</a>
-          </span>
-        </div>
-        <div className="flex flex-col items-center gap-2">
-          <span className="text-zinc-500 dark:text-zinc-400 text-sm">Follow us for updates and exclusive launch offers!</span>
-          <button className="mt-2 px-6 py-2 bg-primary text-white rounded-full font-semibold shadow hover:bg-primary/90 transition-colors">Notify Me</button>
-        </div>
-        <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-primary/10 rounded-full blur-2xl opacity-40 pointer-events-none" />
-      </div>
+        {loading ? (
+          <div className="text-center text-zinc-500">Loading products...</div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+            {filteredProducts.map((product) => (
+              <ProductCard key={product._id} product={product} />
+            ))}
+          </div>
+        )}
+      </main>
     </div>
   );
 }

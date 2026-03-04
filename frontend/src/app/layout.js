@@ -3,7 +3,9 @@
 import "./globals.css";
 import "@fontsource/inter/index.css";
 import "@fontsource/roboto/index.css";
+
 import Header from "../components/Header";
+import { CartProvider } from "../context/CartContext";
 
 export const metadata = {
   title: "Create Next App",
@@ -15,8 +17,10 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className="font-sans antialiased" style={{ fontFamily: 'Inter, Roboto, sans-serif' }}>
-        <Header />
-        {children}
+        <CartProvider>
+          <Header />
+          {children}
+        </CartProvider>
       </body>
     </html>
   );
