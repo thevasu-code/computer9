@@ -22,7 +22,7 @@ export async function POST(request) {
     user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
     await user.save();
 
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000').replace(/\/$/, '');
     const resetUrl = `${siteUrl}/account/reset-password?token=${token}`;
 
     const transporter = nodemailer.createTransport({

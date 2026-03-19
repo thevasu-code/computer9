@@ -3,7 +3,12 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useCart } from "../context/CartContext";
 
-export default function ProductCard({ product }) {
+function optimizeCloudinary(url, width = 400) {
+  if (!url || !url.includes('res.cloudinary.com')) return url;
+  return url.replace('/upload/', `/upload/c_fit,w_${width},f_auto,q_auto/`);
+}
+
+export default function ProductCard({ product, priority = false }) {
   const { addToCart } = useCart();
   const [added, setAdded] = useState(false);
   const [showViewCart, setShowViewCart] = useState(false);
@@ -22,14 +27,16 @@ export default function ProductCard({ product }) {
       <Link href={`/product/${product._id}`} style={{ textDecoration: 'none', width: '100%', minWidth: 0 }}>
         <div className="c9-card-img" style={{ width: '100%', height: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px', marginBottom: '8px' }}>
           <img
-            src={
+            src={optimizeCloudinary(
               product.images && Array.isArray(product.images) && product.images.length > 0 && product.images[0].startsWith('http')
                 ? product.images[0]
                 : product.image || "/no-image.png"
-            }
+            )}
             alt={product.name}
             style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain', transition: 'transform 0.2s', transform: hovered ? 'scale(1.05)' : 'scale(1)' }}
-            loading="lazy"
+            loading={priority ? "eager" : "lazy"}
+            fetchPriority={priority ? "high" : "auto"}
+            decoding={priority ? "sync" : "async"}
           />
         </div>
         <div className="c9-card-title" style={{ fontSize: '14px', color: '#212121', fontWeight: 400, lineHeight: '20px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%', minWidth: 0 }} title={product.name}>

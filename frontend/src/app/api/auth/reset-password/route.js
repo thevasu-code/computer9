@@ -13,14 +13,22 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 });
     }
 
-    const user = await User.findOne({
-      resetPasswordToken: token,
-      resetPasswordExpires: { $gt: new Date() },
-    });
+    const cleanToken = token.trim();
 
-    if (!user) {
-      return NextResponse.json({ error: 'Reset link is invalid or has expired.' }, { status: 400 });
+    // First check if token exists at all (ignoring expiry)
+    const anyUser = await User.findOne({ resetPasswordToken: cleanToken });
+    if (!anyUser) {
+      return NextResponse.json({ error: 'Reset link is invalid. Please request a new one.' }, { status: 400 });
     }
+    // Now check if it is expired
+    if (!anyUser.resetPasswordExpires || anyUser.resetPasswordExpires < new Date()) {
+      // Clear expired token
+      anyUser.resetPasswordToken = undefined;
+      anyUser.resetPasswordExpires = undefined;
+      await anyUser.save();
+      return NextResponse.json({ error: 'Reset link has expired. Please request a new password reset.' }, { status: 400 });
+    }
+    const user = anyUser;
 
     user.password = password; // pre-save hook will hash it
     user.resetPasswordToken = undefined;
