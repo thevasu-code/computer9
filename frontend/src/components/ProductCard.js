@@ -6,6 +6,7 @@ import { useCart } from "../context/CartContext";
 export default function ProductCard({ product }) {
   const { addToCart } = useCart();
   const [added, setAdded] = useState(false);
+  const [showViewCart, setShowViewCart] = useState(false);
   const [hovered, setHovered] = useState(false);
 
   const discount = product.originalPrice && product.price
@@ -52,12 +53,21 @@ export default function ProductCard({ product }) {
           e.preventDefault();
           addToCart(product, 1);
           setAdded(true);
+          setShowViewCart(true);
           setTimeout(() => setAdded(false), 1200);
         }}
         disabled={added}
       >
         {added ? "✓ ADDED" : "ADD TO CART"}
       </button>
+      {showViewCart && (
+        <Link href="/cart" style={{ marginTop: '6px', width: '100%', display: 'block', textAlign: 'center', background: '#fff', color: '#2874f0', border: '1px solid #2874f0', borderRadius: '2px', padding: '8px 0', fontSize: '13px', fontWeight: 600, textDecoration: 'none', letterSpacing: '0.5px', transition: 'background 0.15s' }}
+          onMouseEnter={e => { e.currentTarget.style.background = '#e8f0fe'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = '#fff'; }}
+        >
+          VIEW CART
+        </Link>
+      )}
     </div>
   );
 }

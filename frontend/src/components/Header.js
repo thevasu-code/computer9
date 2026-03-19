@@ -1,7 +1,7 @@
 
 "use client";
 import React, { useEffect, useState, useCallback, useRef } from "react";
-import { ShoppingCart, Search, X, Menu, Home, Package, Settings, LogIn, ChevronRight, User, LogOut, LayoutDashboard } from "lucide-react";
+import { ShoppingCart, Search, X, Menu, Home, Package, LogIn, ChevronRight, User, LogOut, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 import { useCart } from "../context/CartContext";
 
@@ -9,7 +9,6 @@ export default function Header() {
   const { cart } = useCart();
   const [cartCount, setCartCount] = useState(0);
   const [userName, setUserName] = useState("");
-  const [isAdmin, setIsAdmin] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [search, setSearch] = useState("");
   const [products, setProducts] = useState([]);
@@ -22,15 +21,6 @@ export default function Header() {
   useEffect(() => {
     setMounted(true);
     setCartCount(cart.reduce((sum, item) => sum + item.quantity, 0));
-
-    // Check admin token
-    const adminToken = typeof window !== "undefined" ? localStorage.getItem("adminToken") : null;
-    if (adminToken) {
-      try {
-        const p = JSON.parse(atob(adminToken.split(".")[1]));
-        setIsAdmin(!!(p && p.exp > Math.floor(Date.now() / 1000)));
-      } catch { setIsAdmin(false); }
-    }
 
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
     if (token) {
@@ -139,23 +129,26 @@ export default function Header() {
   return (
     <>
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800;900&display=swap');
         .c9hdr-search { display: flex; flex: 1; position: relative; max-width: 600px; }
         .c9hdr-login { display: flex; }
-        .c9hdr-admin { display: flex; }
         .c9hdr-cart-label { display: inline; }
         .c9hdr-mob-search { display: none; }
         .c9hdr-hamburger { display: none; }
-        .c9hdr-user-menu { position: absolute; top: calc(100% + 8px); right: 0; min-width: 180px; background: #fff; border-radius: 4px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); z-index: 200; overflow: hidden; }
-        .c9hdr-user-menu a, .c9hdr-user-menu button { display: flex; align-items: center; gap: 10px; padding: 12px 16px; font-size: 14px; color: #212121; text-decoration: none; background: none; border: none; width: 100%; cursor: pointer; border-bottom: 1px solid #f0f0f0; }
-        .c9hdr-user-menu a:hover, .c9hdr-user-menu button:hover { background: #f1f3f6; }
+        .c9hdr-logo-text { font-family: 'Orbitron', sans-serif; font-weight: 800; font-size: 24px; line-height: 1; letter-spacing: 1px; color: #fff; text-shadow: 1px 1px 0 rgba(0,0,80,0.4), 2px 2px 0 rgba(0,0,80,0.3), 3px 3px 0 rgba(0,0,80,0.2), 0 0 18px rgba(255,255,255,0.5), 0 0 40px rgba(100,160,255,0.25); }
+        .c9hdr-logo-text .c9logo-9 { font-weight: 900; color: #ffe500; text-shadow: 1px 1px 0 rgba(180,90,0,0.5), 2px 2px 0 rgba(180,90,0,0.3), 0 0 14px rgba(255,229,0,0.8), 0 0 32px rgba(255,160,0,0.4); }
         @media (max-width: 640px) {
+          .c9hdr-logo-text { font-size: 20px; letter-spacing: 0.5px; }
+          .c9hdr-logo-text .c9logo-9 { font-size: 20px; }
           .c9hdr-search { display: none !important; }
           .c9hdr-login { display: none !important; }
-          .c9hdr-admin { display: none !important; }
           .c9hdr-cart-label { display: none; }
           .c9hdr-mob-search { display: flex !important; }
           .c9hdr-hamburger { display: flex !important; }
         }
+        .c9hdr-user-menu { position: absolute; top: calc(100% + 8px); right: 0; min-width: 180px; background: #fff; border-radius: 4px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); z-index: 200; overflow: hidden; }
+        .c9hdr-user-menu a, .c9hdr-user-menu button { display: flex; align-items: center; gap: 10px; padding: 12px 16px; font-size: 14px; color: #212121; text-decoration: none; background: none; border: none; width: 100%; cursor: pointer; border-bottom: 1px solid #f0f0f0; }
+        .c9hdr-user-menu a:hover, .c9hdr-user-menu button:hover { background: #f1f3f6; }
       `}</style>
 
       {/* Drawer backdrop */}
@@ -211,18 +204,12 @@ export default function Header() {
             )}
             <NavLink href="/cart" icon={ShoppingCart} label="My Cart" badge={mounted ? cartCount : 0} />
           </div>
-          <div style={{ borderTop: "8px solid #f1f3f6", padding: "8px 0" }}>
-            {mounted && isAdmin ? (
-              <NavLink href="/admin" icon={Settings} label="Admin Panel" />
-            ) : (
-              <NavLink href="/admin/login" icon={Settings} label="Admin Login" />
-            )}
-          </div>
+
         </div>
 
         {/* Drawer footer */}
         <div style={{ padding: "14px 20px", borderTop: "1px solid #f0f0f0", fontSize: "12px", color: "#aaa", textAlign: "center" }}>
-          computer9 &copy; {new Date().getFullYear()}
+          Computer9 &copy; {new Date().getFullYear()}
         </div>
       </div>
 
@@ -244,10 +231,10 @@ export default function Header() {
                 <img src="/logo.svg" alt="Computer9" style={{ width: 32, height: 32, objectFit: "contain" }} />
               </div>
               <div>
-                <div style={{ color: "#fff", fontWeight: 700, fontSize: "20px", lineHeight: 1 }}>computer9</div>
-                <div style={{ color: "#ffe500", fontSize: "10px", fontStyle: "italic", marginTop: "1px" }}>
+                <div className="c9hdr-logo-text">Computer<span className="c9logo-9">9</span></div>
+                {/* <div style={{ color: "#ffe500", fontSize: "10px", fontStyle: "italic", marginTop: "1px" }}>
                   Explore <span style={{ textDecoration: "underline" }}>Plus</span> ✦
-                </div>
+                </div> */}
               </div>
             </a>
           </div>
@@ -307,13 +294,7 @@ export default function Header() {
               )}
             </div>
 
-            {/* Desktop: Admin panel (admin only) */}
-            {mounted && isAdmin && (
-              <a className="c9hdr-admin" href="/admin"
-                style={{ background: "rgba(255,255,255,0.15)", color: "#fff", borderRadius: "20px", padding: "7px 14px", fontSize: "13px", fontWeight: 600, textDecoration: "none", whiteSpace: "nowrap", display: "flex", alignItems: "center", border: "1px solid rgba(255,255,255,0.4)" }}>
-                Admin Panel
-              </a>
-            )}
+
 
             {/* Cart */}
             <a href="/cart" style={{ color: "#fff", textDecoration: "none", display: "flex", alignItems: "center", gap: "5px", position: "relative", fontSize: "14px", fontWeight: 500, flexShrink: 0 }}>
@@ -326,10 +307,7 @@ export default function Header() {
               <span className="c9hdr-cart-label">Cart</span>
             </a>
 
-            {/* Admin link for non-admins */}
-            {mounted && !isAdmin && (
-              <a className="c9hdr-admin" href="/admin/login" style={{ color: "#ffe500", textDecoration: "none", fontSize: "13px", fontWeight: 500 }}>Admin</a>
-            )}
+
           </div>
         </div>
 
