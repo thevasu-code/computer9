@@ -58,7 +58,10 @@ export default function CartPage() {
                 style={{ width: '96px', height: '96px', objectFit: 'contain', border: '1px solid #f0f0f0', borderRadius: '2px', padding: '4px', flexShrink: 0 }}
               />
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '15px', color: '#212121', marginBottom: '4px' }}>{product.name}</div>
+                <a href={`/product/${product._id}`} style={{ fontSize: '15px', color: '#212121', marginBottom: '4px', display: 'block', textDecoration: 'none', fontWeight: 500 }}
+                  onMouseEnter={e => e.currentTarget.style.color = '#2874f0'}
+                  onMouseLeave={e => e.currentTarget.style.color = '#212121'}
+                >{product.name}</a>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
                   <span style={{ fontSize: '17px', fontWeight: 600, color: '#212121' }}>₹{(product.price * quantity).toLocaleString('en-IN')}</span>
                   {product.originalPrice && <span style={{ fontSize: '13px', color: '#878787', textDecoration: 'line-through' }}>₹{(product.originalPrice * quantity).toLocaleString('en-IN')}</span>}
