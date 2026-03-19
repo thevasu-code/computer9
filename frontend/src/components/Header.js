@@ -124,15 +124,15 @@ export default function Header() {
 
   const SearchDropdown = ({ onClose }) =>
     search.length >= 2 ? (
-      <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", boxShadow: "0 6px 16px rgba(0,0,0,0.12)", zIndex: 300, borderRadius: "0 0 4px 4px", maxHeight: "300px", overflowY: "auto" }}>
+      <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, background: "#fff", boxShadow: "0 6px 20px rgba(0,0,0,0.15)", zIndex: 300, borderRadius: "8px", maxHeight: "340px", overflowY: "auto", border: "1px solid #e0e0e0" }}>
         {searchResults.length > 0 ? (
           searchResults.slice(0, 7).map(product => (
             <Link key={product._id} href={`/product/${product._id}`} onClick={() => { setSearch(""); onClose && onClose(); }}
-              style={{ display: "flex", alignItems: "center", gap: "10px", padding: "9px 14px", textDecoration: "none", color: "#212121", borderBottom: "1px solid #f5f5f5" }}
+              style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 14px", textDecoration: "none", color: "#212121", borderBottom: "1px solid #f5f5f5" }}
             >
-              <img src={product.images?.[0]?.startsWith("http") ? product.images[0] : "/no-image.png"} alt={product.name} style={{ width: 34, height: 34, objectFit: "contain", borderRadius: 2, border: "1px solid #eee" }} />
-              <span style={{ fontSize: "13px", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{product.name}</span>
-              <span style={{ fontSize: "12px", color: "#2874f0", fontWeight: 600, flexShrink: 0 }}>â‚¹{product.price}</span>
+              <img src={product.images?.[0]?.startsWith("http") ? product.images[0] : "/no-image.png"} alt={product.name} style={{ width: 38, height: 38, objectFit: "contain", borderRadius: 4, border: "1px solid #eee", flexShrink: 0 }} />
+              <span style={{ fontSize: "13px", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{product.name}</span>
+              <span style={{ fontSize: "13px", color: "#2874f0", fontWeight: 700, flexShrink: 0, marginLeft: "8px" }}>&#8377;{product.price?.toLocaleString('en-IN')}</span>
             </Link>
           ))
         ) : (
@@ -160,6 +160,8 @@ export default function Header() {
           .c9hdr-cart-label { display: none; }
           .c9hdr-mob-search { display: flex !important; }
           .c9hdr-hamburger { display: flex !important; }
+          header > div > div:first-child { grid-column: 1; }
+          header > div { grid-template-columns: auto 1fr auto !important; }
         }
         .c9hdr-user-menu { position: absolute; top: calc(100% + 8px); right: 0; min-width: 180px; background: #fff; border-radius: 4px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); z-index: 200; overflow: hidden; }
         .c9hdr-user-menu a, .c9hdr-user-menu button { display: flex; align-items: center; gap: 10px; padding: 12px 16px; font-size: 14px; color: #212121; text-decoration: none; background: none; border: none; width: 100%; cursor: pointer; border-bottom: 1px solid #f0f0f0; }
@@ -230,10 +232,10 @@ export default function Header() {
 
       {/* Sticky header bar */}
       <header style={{ background: "#2874f0", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 2px 8px rgba(0,0,0,0.18)" }}>
-        <div style={{ maxWidth: "1280px", margin: "0 auto", display: "flex", alignItems: "center", padding: "10px 16px", gap: "0" }}>
+        <div style={{ maxWidth: "1280px", margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 2fr 1fr", alignItems: "center", padding: "10px 16px" }}>
 
           {/* LEFT: hamburger + logo */}
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0, minWidth: "160px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             {/* Mobile: hamburger */}
             <button className="c9hdr-hamburger" onClick={() => setDrawerOpen(true)}
               style={{ background: "none", border: "none", cursor: "pointer", color: "#fff", padding: "4px 6px 4px 0", display: "none", alignItems: "center" }}>
@@ -255,8 +257,8 @@ export default function Header() {
           </div>
 
           {/* CENTER: Desktop search bar — truly centered */}
-          <div className="c9hdr-search" style={{ flex: 1, display: "flex", justifyContent: "center", padding: "0 16px" }}>
-            <div style={{ width: "100%", maxWidth: "560px", position: "relative" }}>
+          <div className="c9hdr-search" style={{ display: "flex", justifyContent: "center", padding: "0 12px" }}>
+            <div style={{ width: "100%", maxWidth: "700px", position: "relative" }}>
               <div style={{ display: "flex", background: "#fff", borderRadius: "24px", overflow: "hidden", boxShadow: "0 1px 6px rgba(0,0,0,0.18)", border: "2px solid transparent", transition: "border-color 0.2s" }}
                 onFocusCapture={e => e.currentTarget.style.borderColor = "#ff9f00"}
                 onBlurCapture={e => e.currentTarget.style.borderColor = "transparent"}
@@ -266,10 +268,10 @@ export default function Header() {
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                   placeholder="Search for products, brands and more"
-                  style={{ flex: 1, border: "none", outline: "none", padding: "10px 18px", fontSize: "14px", background: "transparent" }}
+                  style={{ flex: 1, border: "none", outline: "none", padding: "8px 16px", fontSize: "14px", background: "transparent" }}
                   autoComplete="off"
                 />
-                <button style={{ background: "#ff9f00", border: "none", padding: "0 20px", cursor: "pointer", color: "#fff", borderRadius: "0 22px 22px 0", display: "flex", alignItems: "center" }}>
+                <button style={{ background: "#ff9f00", border: "none", padding: "0 18px", cursor: "pointer", color: "#fff", borderRadius: "0 22px 22px 0", display: "flex", alignItems: "center" }}>
                   <Search size={18} />
                 </button>
               </div>
@@ -277,11 +279,8 @@ export default function Header() {
             </div>
           </div>
 
-          {/* Mobile: spacer */}
-          <div style={{ flex: 1 }} className="c9hdr-mob-spacer" />
-
           {/* RIGHT: actions */}
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0, justifyContent: "flex-end", minWidth: "160px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", justifyContent: "flex-end" }}>
             {/* Mobile: search icon */}
             <button className="c9hdr-mob-search"
               onClick={() => setMobileSearchOpen(v => !v)}

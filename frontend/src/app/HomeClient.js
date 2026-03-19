@@ -66,7 +66,7 @@ export default function HomeClient({ initialProducts }) {
 
         {/* Product Grid */}
         <style>{`
-          .c9-product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1px; padding: 8px; background: #fff; }
+          .c9-product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1px; padding: 8px; background: #fff; }
           .c9-product-grid > div { min-width: 0; overflow: hidden; }
           @media (max-width: 480px) {
             .c9-product-grid { grid-template-columns: repeat(2, 1fr); padding: 4px; }

@@ -25,7 +25,7 @@ export default function ProductCard({ product, priority = false }) {
       style={{ background: '#fff', border: '1px solid #f0f0f0', borderRadius: '2px', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '10px', cursor: 'pointer', transition: 'box-shadow 0.15s', boxShadow: hovered ? '0 4px 16px rgba(0,0,0,0.12)' : 'none', minWidth: 0, overflow: 'hidden', width: '100%', boxSizing: 'border-box' }}
     >
       <Link href={`/product/${product._id}`} style={{ textDecoration: 'none', width: '100%', minWidth: 0 }}>
-        <div className="c9-card-img" style={{ width: '100%', height: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px', marginBottom: '8px' }}>
+        <div className="c9-card-img" style={{ width: '100%', height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px', marginBottom: '8px' }}>
           <img
             src={optimizeCloudinary(
               product.images && Array.isArray(product.images) && product.images.length > 0 && product.images[0].startsWith('http')
