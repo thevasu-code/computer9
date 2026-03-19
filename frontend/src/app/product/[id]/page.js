@@ -12,6 +12,7 @@ export default function ProductDetail({ params }) {
   const [selectedImg, setSelectedImg] = useState(0);
   const { addToCart } = useCart();
   const [added, setAdded] = useState(false);
+  const [showViewCart, setShowViewCart] = useState(false);
   const [zoom, setZoom] = useState({ active: false, x: 50, y: 50 });
   const imgRef = useRef(null);
 
@@ -102,7 +103,7 @@ export default function ProductDetail({ params }) {
                 )}
 
                 {/* Main Image with zoom */}
-                <div className="flex-1 flex flex-col items-center justify-center relative p-4 min-h-[420px]">
+                <div className="flex-1 flex flex-col relative p-4 pt-6">
                   {discount && (
                     <span className="absolute top-3 left-3 text-xs font-bold text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded z-10">
                       {discount}% off
@@ -116,8 +117,8 @@ export default function ProductDetail({ params }) {
 
                   {/* Zoomable image container */}
                   <div
-                    className="w-full h-full flex items-center justify-center overflow-hidden cursor-crosshair"
-                    style={{ minHeight: 360 }}
+                    className="w-full flex items-start justify-center overflow-hidden cursor-crosshair"
+                    style={{ minHeight: 400 }}
                     onMouseMove={handleMouseMove}
                     onMouseLeave={handleMouseLeave}
                   >
@@ -127,7 +128,7 @@ export default function ProductDetail({ params }) {
                       alt={product.name}
                       className="select-none pointer-events-none"
                       style={{
-                        maxHeight: 380,
+                        maxHeight: 500,
                         maxWidth: "100%",
                         objectFit: "contain",
                         transform: zoom.active ? "scale(2.8)" : "scale(1)",
@@ -155,26 +156,21 @@ export default function ProductDetail({ params }) {
                 {product.name}
               </h1>
 
-              {/* Rating placeholder row */}
-              <div className="flex items-center gap-2 pb-1 border-b border-gray-100">
-                <span className="inline-flex items-center gap-1 bg-green-600 text-white text-xs font-bold px-2 py-0.5 rounded">
-                  4.2 ★
-                </span>
-                <span className="text-xs text-gray-400">1,234 Ratings &amp; 89 Reviews</span>
-              </div>
-
               {/* Price Block */}
-              <div className="flex items-baseline gap-3 pt-1">
-                <span className="text-2xl font-medium text-gray-900">
-                  ₹{product.price?.toLocaleString('en-IN')}
-                </span>
-                {product.originalPrice && product.originalPrice > product.price && (
-                  <span className="text-base text-gray-400 line-through">
-                    ₹{product.originalPrice?.toLocaleString('en-IN')}
+              <div className="flex flex-col gap-1 pt-1">
+                <div className="flex items-baseline gap-3 flex-wrap">
+                  <span className="text-3xl font-bold text-gray-900">
+                    ₹{product.price?.toLocaleString('en-IN')}
                   </span>
-                )}
-                {discount && (
-                  <span className="text-base font-medium text-green-600">{discount}% off</span>
+                  {discount && (
+                    <span className="text-base font-semibold text-green-600">{discount}% off</span>
+                  )}
+                </div>
+                {product.originalPrice && product.originalPrice > product.price && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-400">M.R.P:</span>
+                    <span className="text-sm text-gray-400 line-through">₹{product.originalPrice?.toLocaleString('en-IN')}</span>
+                  </div>
                 )}
               </div>
               <p className="text-xs text-gray-400 -mt-1">inclusive of all taxes</p>
@@ -190,13 +186,6 @@ export default function ProductDetail({ params }) {
                   <span className="text-xs text-orange-500">Only {product.stock} left!</span>
                 )}
               </div>
-
-              {/* Description */}
-              {product.description && (
-                <p className="text-sm text-gray-600 leading-relaxed border-t border-gray-100 pt-3">
-                  {product.description}
-                </p>
-              )}
 
               {/* Specs */}
               {product.specs && typeof product.specs === 'object' && Object.keys(product.specs).length > 0 && (
@@ -215,10 +204,11 @@ export default function ProductDetail({ params }) {
                         displayValue = String(value);
                       }
                       if (!displayValue) return null;
+                      const isNumericKey = /^\d+$/.test(key);
                       return (
                         <div key={key} className="flex py-2">
-                          <span className="w-2/5 text-xs text-gray-400 pr-3">{key}</span>
-                          <span className="w-3/5 text-xs text-gray-800">{displayValue}</span>
+                          {!isNumericKey && <span className="w-2/5 text-xs text-gray-400 pr-3">{key}</span>}
+                          <span className={isNumericKey ? 'w-full text-xs text-gray-800' : 'w-3/5 text-xs text-gray-800'}>{displayValue}</span>
                         </div>
                       );
                     })}
@@ -257,16 +247,34 @@ export default function ProductDetail({ params }) {
                     if (!product.stock) return;
                     addToCart(product, quantity);
                     setAdded(true);
+                    setShowViewCart(true);
                     setTimeout(() => setAdded(false), 1500);
                   }}
                   disabled={added || !product.stock}
                 >
                   {added ? "✓ Added to Cart" : product.stock > 0 ? "ADD TO CART" : "OUT OF STOCK"}
                 </button>
+
+                {showViewCart && (
+                  <a
+                    href="/cart"
+                    style={{ display: 'inline-block', marginTop: '6px', width: '100%', maxWidth: '256px', padding: '10px 0', textAlign: 'center', border: '1px solid #2874f0', borderRadius: '4px', color: '#2874f0', fontWeight: 600, fontSize: '14px', textDecoration: 'none', background: '#fff' }}
+                  >
+                    VIEW CART
+                  </a>
+                )}
               </div>
             </div>
           </div>
         </div>
+
+        {/* ── DESCRIPTION SECTION ── */}
+        {product.description && (
+          <div className="bg-white shadow-sm border border-gray-200 rounded-sm mt-3 p-5 lg:p-7">
+            <h2 className="text-base font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-100">Product Description</h2>
+            <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">{product.description}</p>
+          </div>
+        )}
       </div>
     </div>
   );
