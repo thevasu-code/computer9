@@ -114,13 +114,40 @@ function DashboardContent() {
                       </div>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '10px' }}>
-                    {order.products?.map((p, i) => (
-                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#444' }}>
-                        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: '8px' }}>{p.title || 'Product'} × {p.quantity}</span>
-                        <span style={{ fontWeight: 500, flexShrink: 0 }}>₹{(p.price * p.quantity)?.toLocaleString('en-IN')}</span>
-                      </div>
-                    ))}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '10px' }}>
+                    {order.products?.map((p, i) => {
+                      const productId = typeof p.product === 'object' ? p.product?._id : p.product;
+                      const name = p.title || p.product?.name || 'Product';
+                      const img = p.image || p.product?.images?.[0] || null;
+                      return (
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: '#fafafa', borderRadius: '4px', padding: '8px 10px', border: '1px solid #f0f0f0' }}>
+                          <div style={{ width: 44, height: 44, flexShrink: 0, border: '1px solid #eee', borderRadius: '4px', overflow: 'hidden', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            {img ? (
+                              <img src={img} alt={name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                            ) : (
+                              <span style={{ fontSize: '18px' }}>📦</span>
+                            )}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            {productId ? (
+                              <a href={`/product/${productId}`}
+                                style={{ fontSize: '13px', fontWeight: 600, color: '#2874f0', textDecoration: 'none', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                                onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
+                                onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
+                              >
+                                {name}
+                              </a>
+                            ) : (
+                              <span style={{ fontSize: '13px', fontWeight: 600, color: '#212121', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
+                            )}
+                            <div style={{ fontSize: '12px', color: '#878787', marginTop: '2px' }}>Qty: {p.quantity || 1} × ₹{(p.price || 0).toLocaleString('en-IN')}</div>
+                          </div>
+                          <div style={{ fontWeight: 700, fontSize: '13px', color: '#212121', flexShrink: 0 }}>
+                            ₹{((p.price || 0) * (p.quantity || 1)).toLocaleString('en-IN')}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px dashed #f0f0f0', paddingTop: '8px' }}>
                     <span style={{ fontSize: '12px', color: '#878787' }}>Delivered to: {order.address}</span>

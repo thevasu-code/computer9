@@ -174,15 +174,43 @@ export default function AdminOrders() {
                       </div>
                     </div>
                     <div style={{ fontSize: '12px', color: '#878787', marginBottom: '8px', fontWeight: 700 }}>Items ({o.products?.length || 0})</div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      {(o.products || []).map((p, i) => (
-                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', background: '#fff', padding: '8px 12px', borderRadius: '4px', border: '1px solid #f0f0f0' }}>
-                          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: '8px' }}>
-                            {p.product?.title || p.title || 'Product'} × {p.quantity}
-                          </span>
-                          <span style={{ fontWeight: 600, flexShrink: 0 }}>₹{((p.price || 0) * (p.quantity || 1)).toLocaleString('en-IN')}</span>
-                        </div>
-                      ))}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {(o.products || []).map((p, i) => {
+                        const productId = typeof p.product === 'object' ? p.product?._id : p.product;
+                        const name = p.title || p.product?.name || 'Product';
+                        const img = p.image || p.product?.images?.[0] || null;
+                        return (
+                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#fff', padding: '10px 12px', borderRadius: '4px', border: '1px solid #f0f0f0' }}>
+                            {/* Product image */}
+                            <div style={{ width: 52, height: 52, flexShrink: 0, border: '1px solid #eee', borderRadius: '4px', overflow: 'hidden', background: '#f9f9f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              {img ? (
+                                <img src={img} alt={name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                              ) : (
+                                <span style={{ fontSize: '20px' }}>📦</span>
+                              )}
+                            </div>
+                            {/* Product name + link */}
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              {productId ? (
+                                <a href={`/product/${productId}`} target="_blank" rel="noreferrer"
+                                  style={{ fontSize: '13px', fontWeight: 600, color: '#2874f0', textDecoration: 'none', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                                  onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
+                                  onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
+                                >
+                                  {name}
+                                </a>
+                              ) : (
+                                <span style={{ fontSize: '13px', fontWeight: 600, color: '#212121', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
+                              )}
+                              <div style={{ fontSize: '12px', color: '#878787', marginTop: '2px' }}>Qty: {p.quantity || 1} × ₹{(p.price || 0).toLocaleString('en-IN')}</div>
+                            </div>
+                            {/* Subtotal */}
+                            <div style={{ fontWeight: 700, fontSize: '13px', color: '#212121', flexShrink: 0 }}>
+                              ₹{((p.price || 0) * (p.quantity || 1)).toLocaleString('en-IN')}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                     <div style={{ borderTop: '1px dashed #e0e0e0', marginTop: '10px', paddingTop: '10px', display: 'flex', justifyContent: 'flex-end', fontSize: '14px', fontWeight: 700, color: '#212121' }}>
                       Total: ₹{(o.total || 0).toLocaleString('en-IN')}
