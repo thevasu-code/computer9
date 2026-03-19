@@ -1,7 +1,7 @@
 
 "use client";
-import React, { useEffect, useState, useCallback } from "react";
-import { ShoppingCart, Search, X, Menu, Home, Package, Settings, LogIn, ChevronRight } from "lucide-react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
+import { ShoppingCart, Search, X, Menu, Home, Package, Settings, LogIn, ChevronRight, User, LogOut, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 import { useCart } from "../context/CartContext";
 
@@ -9,9 +9,12 @@ export default function Header() {
   const { cart } = useCart();
   const [cartCount, setCartCount] = useState(0);
   const [userName, setUserName] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [search, setSearch] = useState("");
   const [products, setProducts] = useState([]);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const userDropdownRef = useRef(null);
   const [searchResults, setSearchResults] = useState([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
@@ -19,6 +22,16 @@ export default function Header() {
   useEffect(() => {
     setMounted(true);
     setCartCount(cart.reduce((sum, item) => sum + item.quantity, 0));
+
+    // Check admin token
+    const adminToken = typeof window !== "undefined" ? localStorage.getItem("adminToken") : null;
+    if (adminToken) {
+      try {
+        const p = JSON.parse(atob(adminToken.split(".")[1]));
+        setIsAdmin(!!(p && p.exp > Math.floor(Date.now() / 1000)));
+      } catch { setIsAdmin(false); }
+    }
+
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
     if (token) {
       try {
@@ -34,6 +47,17 @@ export default function Header() {
       .then(res => res.json())
       .then(data => { setProducts(data); });
   }, [cart]);
+
+  // Close user dropdown on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (userDropdownRef.current && !userDropdownRef.current.contains(e.target)) {
+        setUserDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   useEffect(() => {
     if (drawerOpen) {
@@ -59,6 +83,13 @@ export default function Header() {
   }, [search, products]);
 
   const closeDrawer = useCallback(() => setDrawerOpen(false), []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    setUserName("");
+    setUserDropdownOpen(false);
+    window.location.href = "/account/login";
+  };
 
   const NavLink = ({ href, icon: Icon, label, badge }) => (
     <a
@@ -114,6 +145,9 @@ export default function Header() {
         .c9hdr-cart-label { display: inline; }
         .c9hdr-mob-search { display: none; }
         .c9hdr-hamburger { display: none; }
+        .c9hdr-user-menu { position: absolute; top: calc(100% + 8px); right: 0; min-width: 180px; background: #fff; border-radius: 4px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); z-index: 200; overflow: hidden; }
+        .c9hdr-user-menu a, .c9hdr-user-menu button { display: flex; align-items: center; gap: 10px; padding: 12px 16px; font-size: 14px; color: #212121; text-decoration: none; background: none; border: none; width: 100%; cursor: pointer; border-bottom: 1px solid #f0f0f0; }
+        .c9hdr-user-menu a:hover, .c9hdr-user-menu button:hover { background: #f1f3f6; }
         @media (max-width: 640px) {
           .c9hdr-search { display: none !important; }
           .c9hdr-login { display: none !important; }
@@ -159,12 +193,30 @@ export default function Header() {
         <div style={{ flex: 1, overflowY: "auto" }}>
           <div style={{ padding: "8px 0" }}>
             <NavLink href="/" icon={Home} label="Home" />
-            <NavLink href="/account/login" icon={LogIn} label={mounted && userName ? "My Account" : "Login / Register"} />
+            {mounted && userName ? (
+              <>
+                <NavLink href="/account/dashboard" icon={LayoutDashboard} label="My Dashboard" />
+                <NavLink href="/account/dashboard" icon={Package} label="My Orders" />
+                <a
+                  onClick={() => { closeDrawer(); handleLogout(); }}
+                  style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "15px 20px", color: "#c62828", textDecoration: "none", fontSize: "15px", fontWeight: 500, borderBottom: "1px solid #f0f0f0", background: "#fff", cursor: "pointer" }}
+                >
+                  <span style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+                    <LogOut size={18} />Logout
+                  </span>
+                </a>
+              </>
+            ) : (
+              <NavLink href="/account/login" icon={LogIn} label="Login / Register" />
+            )}
             <NavLink href="/cart" icon={ShoppingCart} label="My Cart" badge={mounted ? cartCount : 0} />
-            <NavLink href="/account" icon={Package} label="My Orders" />
           </div>
           <div style={{ borderTop: "8px solid #f1f3f6", padding: "8px 0" }}>
-            <NavLink href="/admin/login" icon={Settings} label="Admin Panel" />
+            {mounted && isAdmin ? (
+              <NavLink href="/admin" icon={Settings} label="Admin Panel" />
+            ) : (
+              <NavLink href="/admin/login" icon={Settings} label="Admin Login" />
+            )}
           </div>
         </div>
 
@@ -175,70 +227,105 @@ export default function Header() {
       </div>
 
       {/* Sticky header bar */}
-      <header style={{ background: "#2874f0", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 2px 4px rgba(0,0,0,0.15)" }}>
-        <div style={{ maxWidth: "1280px", margin: "0 auto", display: "flex", alignItems: "center", gap: "12px", padding: "10px 16px" }}>
+      <header style={{ background: "#2874f0", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 2px 8px rgba(0,0,0,0.18)" }}>
+        <div style={{ maxWidth: "1280px", margin: "0 auto", display: "flex", alignItems: "center", padding: "10px 16px", gap: "0" }}>
 
-          {/* Mobile: hamburger */}
-          <button className="c9hdr-hamburger" onClick={() => setDrawerOpen(true)}
-            style={{ background: "none", border: "none", cursor: "pointer", color: "#fff", padding: "4px 6px 4px 0", display: "none", alignItems: "center", flexShrink: 0 }}>
-            <Menu size={24} />
-          </button>
+          {/* LEFT: hamburger + logo */}
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0, minWidth: "160px" }}>
+            {/* Mobile: hamburger */}
+            <button className="c9hdr-hamburger" onClick={() => setDrawerOpen(true)}
+              style={{ background: "none", border: "none", cursor: "pointer", color: "#fff", padding: "4px 6px 4px 0", display: "none", alignItems: "center" }}>
+              <Menu size={24} />
+            </button>
 
-          {/* Logo */}
-          <a href="/" style={{ textDecoration: "none", flexShrink: 0 }}>
-            <div style={{ color: "#fff", fontWeight: 700, fontSize: "20px", lineHeight: 1 }}>computer9</div>
-            <div style={{ color: "#ffe500", fontSize: "10px", fontStyle: "italic", marginTop: "1px" }}>
-              Explore <span style={{ textDecoration: "underline" }}>Plus</span> âœ¦
-            </div>
-          </a>
-
-          {/* Desktop search */}
-          <div className="c9hdr-search" style={{ flex: 1 }}>
-            <div style={{ display: "flex", background: "#fff", borderRadius: "2px", width: "100%" }}>
-              <input
-                type="text"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder="Search for products, brands and more"
-                style={{ flex: 1, border: "none", outline: "none", padding: "10px 14px", fontSize: "14px" }}
-                autoComplete="off"
-              />
-              <button style={{ background: "#2874f0", border: "none", padding: "0 20px", cursor: "pointer", color: "#fff" }}>
-                <Search size={18} />
-              </button>
-            </div>
-            <SearchDropdown />
+            {/* Logo */}
+            <a href="/" style={{ textDecoration: "none" }}>
+              <div style={{ color: "#fff", fontWeight: 700, fontSize: "20px", lineHeight: 1 }}>computer9</div>
+              <div style={{ color: "#ffe500", fontSize: "10px", fontStyle: "italic", marginTop: "1px" }}>
+                Explore <span style={{ textDecoration: "underline" }}>Plus</span> ✦
+              </div>
+            </a>
           </div>
 
-          {/* Spacer on mobile so cart sits right */}
+          {/* CENTER: Desktop search bar — truly centered */}
+          <div className="c9hdr-search" style={{ flex: 1, display: "flex", justifyContent: "center", padding: "0 16px" }}>
+            <div style={{ width: "100%", maxWidth: "560px", position: "relative" }}>
+              <div style={{ display: "flex", background: "#fff", borderRadius: "24px", overflow: "hidden", boxShadow: "0 1px 6px rgba(0,0,0,0.18)", border: "2px solid transparent", transition: "border-color 0.2s" }}
+                onFocusCapture={e => e.currentTarget.style.borderColor = "#ff9f00"}
+                onBlurCapture={e => e.currentTarget.style.borderColor = "transparent"}
+              >
+                <input
+                  type="text"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="Search for products, brands and more"
+                  style={{ flex: 1, border: "none", outline: "none", padding: "10px 18px", fontSize: "14px", background: "transparent" }}
+                  autoComplete="off"
+                />
+                <button style={{ background: "#ff9f00", border: "none", padding: "0 20px", cursor: "pointer", color: "#fff", borderRadius: "0 22px 22px 0", display: "flex", alignItems: "center" }}>
+                  <Search size={18} />
+                </button>
+              </div>
+              <SearchDropdown />
+            </div>
+          </div>
+
+          {/* Mobile: spacer */}
           <div style={{ flex: 1 }} className="c9hdr-mob-spacer" />
 
-          {/* Mobile: search icon */}
-          <button className="c9hdr-mob-search"
-            onClick={() => setMobileSearchOpen(v => !v)}
-            style={{ background: "none", border: "none", cursor: "pointer", color: "#fff", padding: "4px", display: "none", alignItems: "center" }}>
-            {mobileSearchOpen ? <X size={22} /> : <Search size={22} />}
-          </button>
+          {/* RIGHT: actions */}
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0, justifyContent: "flex-end", minWidth: "160px" }}>
+            {/* Mobile: search icon */}
+            <button className="c9hdr-mob-search"
+              onClick={() => setMobileSearchOpen(v => !v)}
+              style={{ background: "none", border: "none", cursor: "pointer", color: "#fff", padding: "4px", display: "none", alignItems: "center" }}>
+              {mobileSearchOpen ? <X size={22} /> : <Search size={22} />}
+            </button>
 
-          {/* Desktop: Login */}
-          <a className="c9hdr-login" href="/account/login"
-            style={{ background: "#fff", color: "#2874f0", borderRadius: "2px", padding: "6px 18px", fontSize: "14px", fontWeight: 600, textDecoration: "none", whiteSpace: "nowrap", alignItems: "center" }}>
-            {mounted && userName ? userName : "Login"}
-          </a>
-
-          {/* Cart */}
-          <a href="/cart" style={{ color: "#fff", textDecoration: "none", display: "flex", alignItems: "center", gap: "5px", position: "relative", fontSize: "14px", fontWeight: 500, flexShrink: 0 }}>
-            <span style={{ position: "relative", display: "inline-flex" }}>
-              <ShoppingCart size={22} />
-              {mounted && cartCount > 0 && (
-                <span style={{ position: "absolute", top: "-8px", right: "-8px", background: "#ff9f00", color: "#fff", borderRadius: "50%", fontSize: "10px", fontWeight: 700, width: "18px", height: "18px", display: "flex", alignItems: "center", justifyContent: "center" }}>{cartCount}</span>
+            {/* Desktop: User account button + dropdown */}
+            <div className="c9hdr-login" ref={userDropdownRef} style={{ position: "relative" }}>
+              <button
+                onClick={() => mounted && userName ? setUserDropdownOpen(v => !v) : window.location.href = "/account/login"}
+                style={{ background: "#fff", color: "#2874f0", borderRadius: "20px", padding: "7px 16px", fontSize: "14px", fontWeight: 600, border: "none", cursor: "pointer", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: "6px", boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }}
+              >
+                <User size={15} />
+                {mounted && userName ? userName.split(" ")[0] : "Login"}
+                {mounted && userName && <ChevronRight size={13} style={{ transform: userDropdownOpen ? "rotate(-90deg)" : "rotate(90deg)", transition: "transform 0.2s" }} />}
+              </button>
+              {userDropdownOpen && mounted && userName && (
+                <div className="c9hdr-user-menu">
+                  <div style={{ padding: "10px 16px 6px", fontSize: "12px", color: "#878787", borderBottom: "1px solid #f0f0f0" }}>Hello, {userName.split(" ")[0]}</div>
+                  <a href="/account/dashboard"><LayoutDashboard size={15} />My Dashboard</a>
+                  <a href="/account/dashboard"><Package size={15} />My Orders</a>
+                  <button onClick={handleLogout} style={{ color: "#c62828" }}><LogOut size={15} />Logout</button>
+                </div>
               )}
-            </span>
-            <span className="c9hdr-cart-label">Cart</span>
-          </a>
+            </div>
 
-          {/* Desktop: Admin */}
-          <a className="c9hdr-admin" href="/admin/login" style={{ color: "#ffe500", textDecoration: "none", fontSize: "13px", fontWeight: 500, alignItems: "center" }}>Admin</a>
+            {/* Desktop: Admin panel (admin only) */}
+            {mounted && isAdmin && (
+              <a className="c9hdr-admin" href="/admin"
+                style={{ background: "rgba(255,255,255,0.15)", color: "#fff", borderRadius: "20px", padding: "7px 14px", fontSize: "13px", fontWeight: 600, textDecoration: "none", whiteSpace: "nowrap", display: "flex", alignItems: "center", border: "1px solid rgba(255,255,255,0.4)" }}>
+                Admin Panel
+              </a>
+            )}
+
+            {/* Cart */}
+            <a href="/cart" style={{ color: "#fff", textDecoration: "none", display: "flex", alignItems: "center", gap: "5px", position: "relative", fontSize: "14px", fontWeight: 500, flexShrink: 0 }}>
+              <span style={{ position: "relative", display: "inline-flex" }}>
+                <ShoppingCart size={22} />
+                {mounted && cartCount > 0 && (
+                  <span style={{ position: "absolute", top: "-8px", right: "-8px", background: "#ff9f00", color: "#fff", borderRadius: "50%", fontSize: "10px", fontWeight: 700, width: "18px", height: "18px", display: "flex", alignItems: "center", justifyContent: "center" }}>{cartCount}</span>
+                )}
+              </span>
+              <span className="c9hdr-cart-label">Cart</span>
+            </a>
+
+            {/* Admin link for non-admins */}
+            {mounted && !isAdmin && (
+              <a className="c9hdr-admin" href="/admin/login" style={{ color: "#ffe500", textDecoration: "none", fontSize: "13px", fontWeight: 500 }}>Admin</a>
+            )}
+          </div>
         </div>
 
         {/* Mobile search bar (below nav row) */}
@@ -267,4 +354,4 @@ export default function Header() {
     </>
   );
 }
-
+

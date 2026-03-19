@@ -82,7 +82,15 @@ export default function Home() {
         {/* Product Grid */}
         <style>{`
           .c9-product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1px; padding: 8px; background: #fff; }
-          @media (max-width: 480px) { .c9-product-grid { grid-template-columns: repeat(2, 1fr); } }
+          .c9-product-grid > div { min-width: 0; overflow: hidden; }
+          @media (max-width: 480px) {
+            .c9-product-grid { grid-template-columns: repeat(2, 1fr); padding: 4px; }
+            .c9-product-grid > div { padding: 3px !important; }
+            .c9-card-img { height: 120px !important; }
+            .c9-card-title { font-size: 12px !important; }
+            .c9-card-price { font-size: 13px !important; }
+            .c9-card-btn { font-size: 11px !important; padding: 7px 0 !important; }
+          }
         `}</style>
         {loading ? (
           <div style={{ background: '#fff', padding: '60px', textAlign: 'center', color: '#878787', fontSize: '15px' }}>
