@@ -239,10 +239,15 @@ export default function Header() {
             </button>
 
             {/* Logo */}
-            <a href="/" style={{ textDecoration: "none" }}>
-              <div style={{ color: "#fff", fontWeight: 700, fontSize: "20px", lineHeight: 1 }}>computer9</div>
-              <div style={{ color: "#ffe500", fontSize: "10px", fontStyle: "italic", marginTop: "1px" }}>
-                Explore <span style={{ textDecoration: "underline" }}>Plus</span> ✦
+            <a href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "8px" }}>
+              <div style={{ background: "#fff", borderRadius: "8px", padding: "3px", display: "flex", alignItems: "center", justifyContent: "center", width: 38, height: 38, flexShrink: 0, boxShadow: "0 1px 4px rgba(0,0,0,0.15)" }}>
+                <img src="/logo.svg" alt="Computer9" style={{ width: 32, height: 32, objectFit: "contain" }} />
+              </div>
+              <div>
+                <div style={{ color: "#fff", fontWeight: 700, fontSize: "20px", lineHeight: 1 }}>computer9</div>
+                <div style={{ color: "#ffe500", fontSize: "10px", fontStyle: "italic", marginTop: "1px" }}>
+                  Explore <span style={{ textDecoration: "underline" }}>Plus</span> ✦
+                </div>
               </div>
             </a>
           </div>
