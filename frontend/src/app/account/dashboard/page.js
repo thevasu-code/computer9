@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 const STATUS_COLORS = {
@@ -11,6 +11,14 @@ const STATUS_COLORS = {
 };
 
 export default function AccountDashboard() {
+  return (
+    <Suspense fallback={<div className="text-center py-12">Loading...</div>}>
+      <DashboardContent />
+    </Suspense>
+  );
+}
+
+function DashboardContent() {
   const [user, setUser] = useState(null);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
