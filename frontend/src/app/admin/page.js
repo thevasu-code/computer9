@@ -31,13 +31,13 @@ export default function AdminDashboard() {
       return;
     }
     Promise.all([
-      fetch("http://localhost:4000/products", {
+      fetch("/api/products", {
         headers: { Authorization: `Bearer ${token}` },
       }).then(res => res.json()),
-      fetch("http://localhost:4000/admin/users", {
+      fetch("/api/admin/users", {
         headers: { Authorization: `Bearer ${token}` },
       }).then(res => res.json()),
-      fetch("http://localhost:4000/admin/orders", {
+      fetch("/api/admin/orders", {
         headers: { Authorization: `Bearer ${token}` },
       }).then(res => res.json()),
     ]).then(([products, users, orders]) => {

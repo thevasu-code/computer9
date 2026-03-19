@@ -34,8 +34,8 @@ export default function CartPage() {
               <td className="flex items-center gap-3 p-2">
                 <img
                   src={
-                    product.images && Array.isArray(product.images) && product.images.length > 0
-                      ? `http://localhost:4000${product.images[0]}`
+                    product.images && Array.isArray(product.images) && product.images.length > 0 && product.images[0].startsWith('http')
+                      ? product.images[0]
                       : product.image || "/no-image.png"
                   }
                   alt={product.name}

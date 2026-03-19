@@ -23,7 +23,7 @@ export default function AdminUsers() {
   const handleUpdate = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch(`http://localhost:4000/admin/users/${editId}`, {
+      const res = await fetch(`/api/admin/users/${editId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(editForm),
@@ -38,7 +38,7 @@ export default function AdminUsers() {
   };
 
   useEffect(() => {
-    fetch("http://localhost:4000/admin/users")
+    fetch("/api/admin/users")
       .then(res => res.json())
       .then(data => {
         setUsers(data);
@@ -49,7 +49,7 @@ export default function AdminUsers() {
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this user?")) return;
     try {
-      const res = await fetch(`http://localhost:4000/admin/users/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/admin/users/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Delete failed");
       setUsers(users.filter(u => u._id !== id));
     } catch (err) {

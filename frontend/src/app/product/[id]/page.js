@@ -21,7 +21,7 @@ export default function ProductDetail({ params }) {
       setProduct(null);
       return;
     }
-    fetch(`http://localhost:4000/products/${id}`)
+    fetch(`/api/products/${id}`)
       .then((res) => {
         if (!res.ok) throw new Error("Product not found");
         return res.json();
@@ -52,7 +52,7 @@ export default function ProductDetail({ params }) {
                   {product.images.map((img, idx) => (
                     <img
                       key={idx}
-                      src={`http://localhost:4000${img}`}
+                      src={img.startsWith('http') ? img : '/no-image.png'}
                       alt={`${product.name} ${idx + 1}`}
                       className="object-contain h-80 w-80 mx-auto drop-shadow-lg rounded-xl bg-white border"
                       loading="lazy"

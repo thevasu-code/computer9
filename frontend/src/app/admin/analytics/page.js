@@ -9,9 +9,9 @@ export default function AdminAnalytics() {
 
   useEffect(() => {
     Promise.all([
-      fetch("http://localhost:4000/analytics/sales-summary").then(res => res.json()),
-      fetch("http://localhost:4000/analytics/sales-trends").then(res => res.json()),
-      fetch("http://localhost:4000/analytics/top-products").then(res => res.json()),
+      fetch("/api/analytics/sales-summary").then(res => res.json()),
+      fetch("/api/analytics/sales-trends").then(res => res.json()),
+      fetch("/api/analytics/top-products").then(res => res.json()),
     ]).then(([summary, trends, topProducts]) => {
       setSummary(summary);
       setTrends(Object.entries(trends));

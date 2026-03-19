@@ -13,7 +13,7 @@ export default function AccountDashboard() {
       router.push("/account");
       return;
     }
-    fetch("http://localhost:4000/users/me", {
+    fetch("/api/users/me", {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(res => res.json())

@@ -13,8 +13,8 @@ export default function ProductCard({ product }) {
         <div className="flex justify-center items-center w-full h-64 mb-2 bg-gradient-to-br from-zinc-50 to-zinc-200 rounded-xl overflow-hidden relative">
           <img
             src={
-              product.images && Array.isArray(product.images) && product.images.length > 0
-                ? `http://localhost:4000${product.images[0]}`
+              product.images && Array.isArray(product.images) && product.images.length > 0 && product.images[0].startsWith('http')
+                ? product.images[0]
                 : product.image || "/no-image.png"
             }
             alt={product.name}

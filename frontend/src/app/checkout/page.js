@@ -89,7 +89,7 @@ export default function CheckoutPage() {
               <div key={idx} className="flex items-center bg-gradient-to-r from-gray-100 to-gray-200 shadow-lg rounded-xl p-4 border border-gray-300">
                 <div className="w-20 h-20 flex items-center justify-center bg-white rounded-lg border mr-4">
                   <img
-                    src={item.product.images?.[0] ? `http://localhost:4000/uploads/${item.product.images[0]}` : "/placeholder.png"}
+                    src={item.product.images?.[0]?.startsWith('http') ? item.product.images[0] : "/placeholder.png"}
                     alt={item.product.title}
                     className="w-16 h-16 object-cover rounded"
                   />

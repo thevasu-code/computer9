@@ -20,7 +20,7 @@ export default function ImageUpload({ onUpload }) {
     for (const file of files) {
       const formData = new FormData();
       formData.append("image", file);
-      const res = await fetch("http://localhost:4000/upload", {
+      const res = await fetch("/api/upload", {
         method: "POST",
         body: formData,
       });

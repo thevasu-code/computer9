@@ -25,7 +25,7 @@ export default function Header() {
       // Decode JWT payload
       const payload = JSON.parse(atob(token.split('.')[1]));
       if (payload && payload.id) {
-        fetch(`http://localhost:4000/users/${payload.id}`)
+        fetch(`/api/users/${payload.id}`)
           .then(res => res.json())
           .then(data => {
             if (data && data.name) setUserName(data.name);
@@ -33,7 +33,7 @@ export default function Header() {
       }
     }
     // Fetch products for MiniSearch
-    fetch("http://localhost:4000/products")
+    fetch("/api/products")
       .then(res => res.json())
       .then(data => {
         console.log("Fetched products:", data);
@@ -99,7 +99,7 @@ export default function Header() {
                     <Link key={product._id} href={`/product/${product._id}`} className="block px-4 py-2 hover:bg-primary/10">
                       <div className="flex items-center gap-2 justify-between">
                         <img
-                          src={product.images?.[0] ? `http://localhost:4000${product.images[0]}` : "/no-image.png"}
+                          src={product.images?.[0]?.startsWith('http') ? product.images[0] : "/no-image.png"}
                           alt={product.name}
                           className="w-7 h-7 object-cover rounded border"
                         />

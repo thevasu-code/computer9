@@ -12,7 +12,7 @@ export default function ProductDetail({ params }) {
 
   useEffect(() => {
     if (!id) return;
-    fetch(`http://localhost:4000/products/${id}`)
+    fetch(`/api/products/${id}`)
       .then((res) => {
         if (!res.ok) throw new Error("Product not found");
         return res.json();

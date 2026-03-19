@@ -1,7 +1,20 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
+import { connectDB } from '@/lib/mongodb';
+import Product from '@/models/Product';
 
 export async function GET() {
-  const res = await fetch("http://localhost:4000/products");
-  const data = await res.json();
-  return NextResponse.json(data);
+  await connectDB();
+  const products = await Product.find();
+  return NextResponse.json(products);
+}
+
+export async function POST(request) {
+  await connectDB();
+  try {
+    const body = await request.json();
+    const product = await Product.create(body);
+    return NextResponse.json(product, { status: 201 });
+  } catch (err) {
+    return NextResponse.json({ error: err.message }, { status: 400 });
+  }
 }

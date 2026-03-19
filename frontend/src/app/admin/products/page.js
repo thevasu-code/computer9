@@ -71,7 +71,7 @@ export default function AdminProducts() {
       try {
         const payload = { ...editForm };
         if (editUploadedImage) payload.image = editUploadedImage;
-        const res = await fetch(`http://localhost:4000/products/${editId}`, {
+        const res = await fetch(`/api/products/${editId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
@@ -88,7 +88,7 @@ export default function AdminProducts() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch("http://localhost:4000/products")
+    fetch("/api/products")
       .then(res => res.json())
       .then(data => {
         setProducts(data);
@@ -109,7 +109,7 @@ export default function AdminProducts() {
     try {
       const payload = { ...form };
       if (uploadedImage) payload.image = uploadedImage;
-      const res = await fetch("http://localhost:4000/products", {
+      const res = await fetch("/api/products", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -128,7 +128,7 @@ export default function AdminProducts() {
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this product?")) return;
     try {
-      const res = await fetch(`http://localhost:4000/products/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/products/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Delete failed");
       setProducts(products.filter(p => p._id !== id));
     } catch (err) {
@@ -158,7 +158,7 @@ export default function AdminProducts() {
           {form.images.length > 0 && (
             <div className="flex gap-2 flex-wrap justify-center">
               {form.images.map((img, idx) => (
-                <Image key={idx} src={`http://localhost:4000${img}`} alt={`Product ${idx + 1}`} width={96} height={96} className="object-contain rounded border" unoptimized />
+                <Image key={idx} src={img.startsWith('http') ? img : '/no-image.png'} alt={`Product ${idx + 1}`} width={96} height={96} className="object-contain rounded border" unoptimized />
               ))}
             </div>
           )}
@@ -290,7 +290,7 @@ export default function AdminProducts() {
                           <div className="flex gap-3 flex-wrap justify-start mt-2">
                             {editForm.images.slice(0, 5).map((img, idx) => (
                               <div key={idx} className="relative inline-block group">
-                                <Image src={`http://localhost:4000${img}`} alt={`Product ${idx + 1}`} width={80} height={80} className="object-contain rounded-lg border border-zinc-300 shadow-sm transition-transform group-hover:scale-105" unoptimized />
+                                <Image src={img.startsWith('http') ? img : '/no-image.png'} alt={`Product ${idx + 1}`} width={80} height={80} className="object-contain rounded-lg border border-zinc-300 shadow-sm transition-transform group-hover:scale-105" unoptimized />
                                 <button
                                   type="button"
                                   className="absolute top-1 right-1 bg-gradient-to-tr from-red-600 to-pink-500 text-white rounded-full w-7 h-7 flex items-center justify-center text-base shadow-md opacity-80 hover:opacity-100 transition-opacity"
@@ -323,7 +323,7 @@ export default function AdminProducts() {
                   <td className="p-2 text-center">{p.brand}</td>
                   <td className="p-2 text-center">
                     {(p.images && p.images.length > 0) ? (
-                      <Image src={`http://localhost:4000${p.images[0]}`} alt={p.name} width={64} height={64} className="object-contain rounded border" unoptimized />
+                      <Image src={p.images[0].startsWith('http') ? p.images[0] : '/no-image.png'} alt={p.name} width={64} height={64} className="object-contain rounded border" unoptimized />
                     ) : (
                       <span className="text-zinc-400">No image</span>
                     )}
