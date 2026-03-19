@@ -29,7 +29,7 @@ export async function POST(request) {
         title: item.title || '',
         quantity: item.quantity,
         price: item.price,
-        image: '',
+        image: item.image || '',
       }));
     } else if (cart && Array.isArray(cart)) {
       products = cart.map(item => ({
@@ -69,7 +69,9 @@ export async function GET(request) {
   if (!decoded) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   await connectDB();
   try {
-    const orders = await Order.find({ user: decoded.id }).sort({ createdAt: -1 });
+    const orders = await Order.find({ user: decoded.id })
+      .sort({ createdAt: -1 })
+      .populate('products.product', 'name images price');
     return NextResponse.json(orders);
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
