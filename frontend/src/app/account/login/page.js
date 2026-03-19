@@ -22,7 +22,12 @@ export default function LoginPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Login failed");
       localStorage.setItem("token", data.token);
-      router.push("/account");
+      window.dispatchEvent(new Event("userLogin"));
+      if (data.user && data.user.isAdmin) {
+        router.push("/admin/dashboard");
+      } else {
+        router.push("/account/dashboard");
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -75,6 +80,9 @@ export default function LoginPage() {
               onBlur={e => e.target.style.borderBottomColor = '#e0e0e0'}
             />
             {error && <div style={{ color: '#ff4444', fontSize: '13px' }}>{error}</div>}
+            <div style={{ textAlign: 'right' }}>
+              <a href="/account/forgot-password" style={{ color: '#2874f0', fontSize: '13px', textDecoration: 'none' }}>Forgot Password?</a>
+            </div>
             <button
               type="submit"
               disabled={loading}

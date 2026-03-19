@@ -18,10 +18,7 @@ export default function Header() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-    setCartCount(cart.reduce((sum, item) => sum + item.quantity, 0));
-
+  const fetchUserName = useCallback(() => {
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
     if (token) {
       try {
@@ -32,10 +29,28 @@ export default function Header() {
             .then(data => { if (data && data.name) setUserName(data.name); });
         }
       } catch {}
+    } else {
+      setUserName("");
     }
+  }, []);
+
+  useEffect(() => {
+    setMounted(true);
+    fetchUserName();
     fetch("/api/products")
       .then(res => res.json())
       .then(data => { setProducts(data); });
+
+    window.addEventListener("userLogin", fetchUserName);
+    window.addEventListener("storage", fetchUserName);
+    return () => {
+      window.removeEventListener("userLogin", fetchUserName);
+      window.removeEventListener("storage", fetchUserName);
+    };
+  }, [fetchUserName]);
+
+  useEffect(() => {
+    setCartCount(cart.reduce((sum, item) => sum + item.quantity, 0));
   }, [cart]);
 
   // Close user dropdown on outside click

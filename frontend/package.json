@@ -21,6 +21,7 @@
     "minisearch": "^7.2.0",
     "mongoose": "^8.9.5",
     "next": "16.1.6",
+    "nodemailer": "^8.0.3",
     "radix-ui": "^1.4.3",
     "razorpay": "^2.9.6",
     "react": "19.2.3",
