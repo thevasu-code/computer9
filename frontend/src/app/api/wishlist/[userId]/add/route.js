@@ -3,10 +3,11 @@ import { connectDB } from '@/lib/mongodb';
 import User from '@/models/User';
 
 export async function POST(request, { params }) {
+  const { userId } = await params;
   await connectDB();
   try {
     const { productId } = await request.json();
-    const user = await User.findById(params.userId);
+    const user = await User.findById(userId);
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
     if (!user.wishlist.includes(productId)) {
       user.wishlist.push(productId);

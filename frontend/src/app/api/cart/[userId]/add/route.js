@@ -3,11 +3,12 @@ import { connectDB } from '@/lib/mongodb';
 import Cart from '@/models/Cart';
 
 export async function POST(request, { params }) {
+  const { userId } = await params;
   await connectDB();
   try {
     const { productId, quantity } = await request.json();
-    let cart = await Cart.findOne({ user: params.userId });
-    if (!cart) cart = new Cart({ user: params.userId, items: [] });
+    let cart = await Cart.findOne({ user: userId });
+    if (!cart) cart = new Cart({ user: userId, items: [] });
     const existing = cart.items.find(i => i.product.toString() === productId);
     if (existing) {
       existing.quantity += quantity;

@@ -51,9 +51,31 @@ export default function CheckoutPage() {
         name: "Computer9.in",
         description: "Order Payment",
         order_id: data.order.id,
-        handler: function (response) {
+        handler: async function (response) {
+          // Save order to DB
+          try {
+            const token = localStorage.getItem("token");
+            await fetch("/api/orders", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+              },
+              body: JSON.stringify({
+                items: cart.map(item => ({
+                  product: item.product._id,
+                  quantity: item.quantity,
+                  price: item.product.price,
+                })),
+                total,
+                billing,
+                razorpayOrderId: response.razorpay_order_id,
+                razorpayPaymentId: response.razorpay_payment_id,
+              }),
+            });
+          } catch {}
           clearCart();
-          router.push("/orders?success=1");
+          router.push("/account/dashboard?order=success");
         },
         prefill: {
           name: billing.name,

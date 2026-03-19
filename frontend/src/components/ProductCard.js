@@ -6,11 +6,20 @@ import { useCart } from "../context/CartContext";
 export default function ProductCard({ product }) {
   const { addToCart } = useCart();
   const [added, setAdded] = useState(false);
+  const [hovered, setHovered] = useState(false);
+
+  const discount = product.originalPrice && product.price
+    ? Math.round((1 - product.price / product.originalPrice) * 100)
+    : null;
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-1 flex flex-col items-center border border-zinc-200 hover:shadow-2xl transition-all group relative">
-      <Link href={`/product/${product._id}`} className="block w-full" tabIndex={-1}>
-        <div className="flex justify-center items-center w-full h-64 mb-2 bg-gradient-to-br from-zinc-50 to-zinc-200 rounded-xl overflow-hidden relative">
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{ background: '#fff', border: '1px solid #f0f0f0', borderRadius: '2px', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '10px', cursor: 'pointer', transition: 'box-shadow 0.15s', boxShadow: hovered ? '0 4px 16px rgba(0,0,0,0.12)' : 'none' }}
+    >
+      <Link href={`/product/${product._id}`} style={{ textDecoration: 'none', width: '100%' }}>
+        <div style={{ width: '100%', height: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px', marginBottom: '8px' }}>
           <img
             src={
               product.images && Array.isArray(product.images) && product.images.length > 0 && product.images[0].startsWith('http')
@@ -18,23 +27,25 @@ export default function ProductCard({ product }) {
                 : product.image || "/no-image.png"
             }
             alt={product.name}
-            className="object-contain h-65 w-65 mx-auto transition-transform duration-300 group-hover:scale-105 drop-shadow-lg"
+            style={{ maxHeight: '164px', maxWidth: '100%', objectFit: 'contain', transition: 'transform 0.2s', transform: hovered ? 'scale(1.05)' : 'scale(1)' }}
             loading="lazy"
           />
         </div>
-        <h2 className="text-lg font-bold text-zinc-900 mb-1 text-center truncate w-full" title={product.name}>
+        <div style={{ fontSize: '14px', color: '#212121', fontWeight: 400, lineHeight: '20px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%' }} title={product.name}>
           {product.name}
-        </h2>
-        <p className="text-zinc-600 text-sm mb-2 text-center line-clamp-2 min-h-[38px]">{product.description}</p>
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <span className="text-xl font-bold text-primary">₹{product.price}</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginTop: '5px', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '16px', fontWeight: 500, color: '#212121' }}>₹{product.price?.toLocaleString('en-IN')}</span>
           {product.originalPrice && (
-            <span className="text-zinc-400 line-through text-sm">₹{product.originalPrice}</span>
+            <span style={{ fontSize: '12px', color: '#878787', textDecoration: 'line-through' }}>₹{product.originalPrice?.toLocaleString('en-IN')}</span>
+          )}
+          {discount > 0 && (
+            <span style={{ fontSize: '12px', color: '#388e3c', fontWeight: 600 }}>{discount}% off</span>
           )}
         </div>
       </Link>
       <button
-        className="mt-auto w-full bg-gradient-to-r from-primary to-blue-600 text-white py-2 rounded-lg font-semibold shadow hover:from-blue-700 hover:to-primary transition-colors"
+        style={{ marginTop: '10px', width: '100%', background: added ? '#388e3c' : '#ff9f00', color: '#fff', border: 'none', borderRadius: '2px', padding: '9px 0', fontSize: '13px', fontWeight: 600, cursor: 'pointer', letterSpacing: '0.5px', transition: 'background 0.15s' }}
         onClick={(e) => {
           e.stopPropagation();
           e.preventDefault();
@@ -44,8 +55,9 @@ export default function ProductCard({ product }) {
         }}
         disabled={added}
       >
-        {added ? "Added!" : "Add to Cart"}
+        {added ? "✓ ADDED" : "ADD TO CART"}
       </button>
     </div>
   );
 }
+

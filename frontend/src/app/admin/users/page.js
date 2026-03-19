@@ -1,11 +1,15 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [editId, setEditId] = useState(null);
   const [editForm, setEditForm] = useState({ name: "", email: "", isAdmin: false });
+  const router = useRouter();
+
   const handleEditInput = (e) => {
     const { name, value, type, checked } = e.target;
     setEditForm({ ...editForm, [name]: type === "checkbox" ? checked : value });
@@ -22,10 +26,11 @@ export default function AdminUsers() {
 
   const handleUpdate = async (e) => {
     e.preventDefault();
+    const token = localStorage.getItem("adminToken");
     try {
       const res = await fetch(`/api/admin/users/${editId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(editForm),
       });
       const data = await res.json();
@@ -38,18 +43,35 @@ export default function AdminUsers() {
   };
 
   useEffect(() => {
-    fetch("/api/admin/users")
+    const token = localStorage.getItem("adminToken");
+    if (!token) {
+      router.push("/admin/login");
+      return;
+    }
+    fetch("/api/admin/users", { headers: { Authorization: `Bearer ${token}` } })
       .then(res => res.json())
       .then(data => {
-        setUsers(data);
+        if (!Array.isArray(data)) {
+          setError(data.error || "Failed to load users.");
+        } else {
+          setUsers(data);
+        }
+        setLoading(false);
+      })
+      .catch(() => {
+        setError("Failed to load users.");
         setLoading(false);
       });
-  }, []);
+  }, [router]);
 
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this user?")) return;
+    const token = localStorage.getItem("adminToken");
     try {
-      const res = await fetch(`/api/admin/users/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/admin/users/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (!res.ok) throw new Error("Delete failed");
       setUsers(users.filter(u => u._id !== id));
     } catch (err) {
@@ -58,6 +80,7 @@ export default function AdminUsers() {
   };
 
   if (loading) return <div className="text-center py-12">Loading...</div>;
+  if (error) return <div className="text-center py-12 text-red-500">{error}</div>;
 
   return (
     <div className="max-w-5xl mx-auto py-12 px-4">
