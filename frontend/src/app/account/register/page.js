@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 export default function RegisterPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -18,7 +19,7 @@ export default function RegisterPage() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, phone, password }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Registration failed");
@@ -80,6 +81,15 @@ export default function RegisterPage() {
               value={password}
               onChange={e => setPassword(e.target.value)}
               required
+              style={{ border: 'none', borderBottom: '2px solid #e0e0e0', outline: 'none', padding: '10px 0', fontSize: '15px', width: '100%' }}
+              onFocus={e => e.target.style.borderBottomColor = '#2874f0'}
+              onBlur={e => e.target.style.borderBottomColor = '#e0e0e0'}
+            />
+            <input
+              type="tel"
+              placeholder="Enter Phone Number"
+              value={phone}
+              onChange={e => setPhone(e.target.value)}
               style={{ border: 'none', borderBottom: '2px solid #e0e0e0', outline: 'none', padding: '10px 0', fontSize: '15px', width: '100%' }}
               onFocus={e => e.target.style.borderBottomColor = '#2874f0'}
               onBlur={e => e.target.style.borderBottomColor = '#e0e0e0'}

@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 
 const STATUS_COLORS = {
   pending:    { bg: '#fff8e1', color: '#f57f17', label: 'Pending' },
@@ -23,6 +24,12 @@ function DashboardContent() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [ordersLoading, setOrdersLoading] = useState(true);
+  const [billingEditOpen, setBillingEditOpen] = useState(false);
+  const [billingForm, setBillingForm] = useState({ phone: "", address: "", pincode: "" });
+  const [savingBilling, setSavingBilling] = useState(false);
+  const [billingMessage, setBillingMessage] = useState("");
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
   const router = useRouter();
   const searchParams = useSearchParams();
   const orderSuccess = searchParams.get("order") === "success";
@@ -42,6 +49,11 @@ function DashboardContent() {
           router.push("/account/login");
         } else {
           setUser(data);
+          setBillingForm({
+            phone: data.phone || "",
+            address: data.billingAddress?.address || "",
+            pincode: data.billingAddress?.pincode || "",
+          });
           setLoading(false);
         }
       });
@@ -54,6 +66,83 @@ function DashboardContent() {
       })
       .catch(() => setOrdersLoading(false));
   }, [router]);
+
+  const handleBillingChange = (e) => {
+    const { name, value } = e.target;
+    setBillingForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleBillingSave = async (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem("token");
+    if (!token) {
+      router.push("/account/login");
+      return;
+    }
+
+    setSavingBilling(true);
+    setBillingMessage("");
+    try {
+      const res = await fetch("/api/users/me", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          phone: billingForm.phone,
+          billingAddress: {
+            address: billingForm.address,
+            pincode: billingForm.pincode,
+          },
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to update billing details");
+      setUser(data);
+      setBillingForm({
+        phone: data.phone || "",
+        address: data.billingAddress?.address || "",
+        pincode: data.billingAddress?.pincode || "",
+      });
+      setBillingEditOpen(false);
+      setBillingMessage("Billing details updated successfully.");
+    } catch (err) {
+      setBillingMessage(err.message || "Failed to update billing details.");
+    } finally {
+      setSavingBilling(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    const confirmation = window.prompt('Type DELETE to confirm account deletion');
+    if (confirmation !== 'DELETE') return;
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      router.push("/account/login");
+      return;
+    }
+
+    setDeletingAccount(true);
+    setDeleteError("");
+    try {
+      const res = await fetch("/api/users/me", {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to delete account");
+      localStorage.removeItem("token");
+      localStorage.removeItem("adminToken");
+      window.dispatchEvent(new Event("storage"));
+      router.replace("/");
+    } catch (err) {
+      setDeleteError(err.message || "Failed to delete account.");
+    } finally {
+      setDeletingAccount(false);
+    }
+  };
 
   if (loading) return <div className="text-center py-12">Loading...</div>;
   if (!user) return <div className="text-center py-12">User not found.</div>;
@@ -81,6 +170,84 @@ function DashboardContent() {
           <div style={{ fontSize: '18px', fontWeight: 600, color: '#212121' }}>{user.name}</div>
           <div style={{ fontSize: '13px', color: '#878787', marginTop: '2px' }}>{user.email}</div>
         </div>
+      </div>
+
+      {/* Billing details */}
+      <div style={{ background: '#fff', borderRadius: '4px', padding: '20px 24px', marginBottom: '16px', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '10px' }}>
+          <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#212121' }}>Billing Details</h2>
+          {!billingEditOpen ? (
+            <button
+              onClick={() => setBillingEditOpen(true)}
+              style={{ border: '1px solid #2874f0', color: '#2874f0', background: '#fff', borderRadius: '4px', padding: '6px 12px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
+            >
+              Edit
+            </button>
+          ) : null}
+        </div>
+
+        {billingEditOpen ? (
+          <form onSubmit={handleBillingSave} style={{ display: 'grid', gap: '10px' }}>
+            <input
+              name="phone"
+              placeholder="Phone number"
+              value={billingForm.phone}
+              onChange={handleBillingChange}
+              style={{ border: '1px solid #ddd', borderRadius: '4px', padding: '10px 12px', fontSize: '14px' }}
+            />
+            <input
+              name="address"
+              placeholder="Billing address"
+              value={billingForm.address}
+              onChange={handleBillingChange}
+              style={{ border: '1px solid #ddd', borderRadius: '4px', padding: '10px 12px', fontSize: '14px' }}
+            />
+            <input
+              name="pincode"
+              placeholder="Pincode"
+              value={billingForm.pincode}
+              onChange={handleBillingChange}
+              style={{ border: '1px solid #ddd', borderRadius: '4px', padding: '10px 12px', fontSize: '14px', maxWidth: '220px' }}
+            />
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '4px' }}>
+              <button
+                type="submit"
+                disabled={savingBilling}
+                style={{ background: '#2874f0', color: '#fff', border: 'none', borderRadius: '4px', padding: '8px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
+              >
+                {savingBilling ? 'Saving...' : 'Save Billing Details'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setBillingEditOpen(false);
+                  setBillingForm({
+                    phone: user.phone || "",
+                    address: user.billingAddress?.address || "",
+                    pincode: user.billingAddress?.pincode || "",
+                  });
+                  setBillingMessage("");
+                }}
+                style={{ border: '1px solid #bbb', color: '#555', background: '#fff', borderRadius: '4px', padding: '8px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        ) : (
+          <div style={{ display: 'grid', gap: '6px', color: '#444', fontSize: '14px' }}>
+            <div><span style={{ color: '#878787' }}>Phone:</span> {user.phone || 'Not set'}</div>
+            <div><span style={{ color: '#878787' }}>Address:</span> {user.billingAddress?.address || 'Not set'}</div>
+            <div><span style={{ color: '#878787' }}>Pincode:</span> {user.billingAddress?.pincode || 'Not set'}</div>
+            <Link href="/checkout" style={{ color: '#2874f0', fontSize: '13px', textDecoration: 'none', marginTop: '4px' }}>Use these details at checkout</Link>
+          </div>
+        )}
+
+        {billingMessage && (
+          <div style={{ marginTop: '10px', color: billingMessage.includes('successfully') ? '#2e7d32' : '#c62828', fontSize: '13px' }}>
+            {billingMessage}
+          </div>
+        )}
       </div>
 
       {/* Orders section */}
@@ -158,6 +325,22 @@ function DashboardContent() {
             })}
           </div>
         )}
+      </div>
+
+      {/* Danger zone */}
+      <div style={{ background: '#fff', borderRadius: '4px', padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,0.08)', borderTop: '4px solid #d32f2f', marginTop: '16px' }}>
+        <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#b71c1c', marginBottom: '8px' }}>Danger Zone</h2>
+        <p style={{ color: '#666', fontSize: '13px', marginBottom: '12px' }}>
+          Deleting your account will remove your profile and cart data. This action cannot be undone.
+        </p>
+        <button
+          onClick={handleDeleteAccount}
+          disabled={deletingAccount}
+          style={{ background: '#d32f2f', color: '#fff', border: 'none', borderRadius: '4px', padding: '10px 14px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
+        >
+          {deletingAccount ? 'Deleting Account...' : 'Delete Account'}
+        </button>
+        {deleteError && <div style={{ marginTop: '10px', color: '#c62828', fontSize: '13px' }}>{deleteError}</div>}
       </div>
     </div>
   );

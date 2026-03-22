@@ -3,12 +3,15 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { ShoppingCart, Search, X, Menu, Home, Package, LogIn, ChevronRight, User, LogOut, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCart } from "../context/CartContext";
 
 export default function Header() {
+  const router = useRouter();
   const { cart } = useCart();
   const [cartCount, setCartCount] = useState(0);
   const [userName, setUserName] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [search, setSearch] = useState("");
   const [products, setProducts] = useState([]);
@@ -23,6 +26,7 @@ export default function Header() {
     if (token) {
       try {
         const payload = JSON.parse(atob(token.split(".")[1]));
+        setIsAdmin(Boolean(payload?.isAdmin || payload?.role === "admin"));
         if (payload && payload.id) {
           fetch(`/api/users/${payload.id}`)
             .then(res => res.json())
@@ -31,6 +35,7 @@ export default function Header() {
       } catch {}
     } else {
       setUserName("");
+      setIsAdmin(false);
     }
   }, []);
 
@@ -91,13 +96,16 @@ export default function Header() {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("adminToken");
     setUserName("");
+    setIsAdmin(false);
     setUserDropdownOpen(false);
-    window.location.href = "/account/login";
+    window.dispatchEvent(new Event("storage"));
+    router.push("/account/login");
   };
 
   const NavLink = ({ href, icon: Icon, label, badge }) => (
-    <a
+    <Link
       href={href}
       onClick={closeDrawer}
       style={{
@@ -119,7 +127,7 @@ export default function Header() {
         )}
         <ChevronRight size={16} style={{ color: "#bbb" }} />
       </span>
-    </a>
+    </Link>
   );
 
   const SearchDropdown = ({ onClose }) =>
@@ -205,8 +213,10 @@ export default function Header() {
             <NavLink href="/" icon={Home} label="Home" />
             {mounted && userName ? (
               <>
+                {isAdmin && <NavLink href="/admin" icon={LayoutDashboard} label="Admin" />}
                 <NavLink href="/account/dashboard" icon={LayoutDashboard} label="My Dashboard" />
                 <NavLink href="/account/dashboard" icon={Package} label="My Orders" />
+                <NavLink href="/cart" icon={ShoppingCart} label="My Cart" badge={mounted ? cartCount : 0} />
                 <a
                   onClick={() => { closeDrawer(); handleLogout(); }}
                   style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "15px 20px", color: "#c62828", textDecoration: "none", fontSize: "15px", fontWeight: 500, borderBottom: "1px solid #f0f0f0", background: "#fff", cursor: "pointer" }}
@@ -217,9 +227,11 @@ export default function Header() {
                 </a>
               </>
             ) : (
-              <NavLink href="/account/login" icon={LogIn} label="Login / Register" />
+              <>
+                <NavLink href="/cart" icon={ShoppingCart} label="My Cart" badge={mounted ? cartCount : 0} />
+                <NavLink href="/account/login" icon={LogIn} label="Login / Register" />
+              </>
             )}
-            <NavLink href="/cart" icon={ShoppingCart} label="My Cart" badge={mounted ? cartCount : 0} />
           </div>
 
         </div>
@@ -243,7 +255,7 @@ export default function Header() {
             </button>
 
             {/* Logo */}
-            <a href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "8px" }}>
+            <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "8px" }}>
               <div style={{ background: "#fff", borderRadius: "8px", padding: "3px", display: "flex", alignItems: "center", justifyContent: "center", width: 38, height: 38, flexShrink: 0, boxShadow: "0 1px 4px rgba(0,0,0,0.15)" }}>
                 <img src="/logo.svg" alt="Computer9" style={{ width: 32, height: 32, objectFit: "contain" }} />
               </div>
@@ -253,7 +265,7 @@ export default function Header() {
                   Explore <span style={{ textDecoration: "underline" }}>Plus</span> ✦
                 </div> */}
               </div>
-            </a>
+            </Link>
           </div>
 
           {/* CENTER: Desktop search bar — truly centered */}
@@ -288,10 +300,39 @@ export default function Header() {
               {mobileSearchOpen ? <X size={22} /> : <Search size={22} />}
             </button>
 
+            {mounted && userName && isAdmin && (
+              <Link
+                href="/admin"
+                style={{
+                  background: "#ff9f00",
+                  color: "#fff",
+                  borderRadius: "20px",
+                  padding: "7px 14px",
+                  fontSize: "13px",
+                  fontWeight: 700,
+                  textDecoration: "none",
+                  whiteSpace: "nowrap",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.12)",
+                }}
+              >
+                <LayoutDashboard size={14} />
+                Manage Admin Dashboard
+              </Link>
+            )}
+
             {/* Desktop: User account button + dropdown */}
             <div className="c9hdr-login" ref={userDropdownRef} style={{ position: "relative" }}>
               <button
-                onClick={() => mounted && userName ? setUserDropdownOpen(v => !v) : window.location.href = "/account/login"}
+                onClick={() => {
+                  if (mounted && userName) {
+                    setUserDropdownOpen(v => !v);
+                  } else {
+                    router.push("/account/login");
+                  }
+                }}
                 style={{ background: "#fff", color: "#2874f0", borderRadius: "20px", padding: "7px 16px", fontSize: "14px", fontWeight: 600, border: "none", cursor: "pointer", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: "6px", boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }}
               >
                 <User size={15} />
@@ -301,8 +342,9 @@ export default function Header() {
               {userDropdownOpen && mounted && userName && (
                 <div className="c9hdr-user-menu">
                   <div style={{ padding: "10px 16px 6px", fontSize: "12px", color: "#878787", borderBottom: "1px solid #f0f0f0" }}>Hello, {userName.split(" ")[0]}</div>
-                  <a href="/account/dashboard"><LayoutDashboard size={15} />My Dashboard</a>
-                  <a href="/account/dashboard"><Package size={15} />My Orders</a>
+                  {isAdmin && <Link href="/admin" onClick={() => setUserDropdownOpen(false)}><LayoutDashboard size={15} />Admin</Link>}
+                  <Link href="/account/dashboard" onClick={() => setUserDropdownOpen(false)}><LayoutDashboard size={15} />My Dashboard</Link>
+                  <Link href="/account/dashboard" onClick={() => setUserDropdownOpen(false)}><Package size={15} />My Orders</Link>
                   <button onClick={handleLogout} style={{ color: "#c62828" }}><LogOut size={15} />Logout</button>
                 </div>
               )}
@@ -311,7 +353,7 @@ export default function Header() {
 
 
             {/* Cart */}
-            <a href="/cart" style={{ color: "#fff", textDecoration: "none", display: "flex", alignItems: "center", gap: "5px", position: "relative", fontSize: "14px", fontWeight: 500, flexShrink: 0 }}>
+            <Link href="/cart" style={{ color: "#fff", textDecoration: "none", display: "flex", alignItems: "center", gap: "5px", position: "relative", fontSize: "14px", fontWeight: 500, flexShrink: 0 }}>
               <span style={{ position: "relative", display: "inline-flex" }}>
                 <ShoppingCart size={22} />
                 {mounted && cartCount > 0 && (
@@ -319,7 +361,7 @@ export default function Header() {
                 )}
               </span>
               <span className="c9hdr-cart-label">Cart</span>
-            </a>
+            </Link>
 
 
           </div>

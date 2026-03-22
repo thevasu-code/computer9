@@ -13,7 +13,7 @@ export default function DashboardRedirect() {
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
       if (payload && payload.role === "admin") {
-        router.replace("/admin/dashboard");
+        router.replace("/admin");
       } else {
         router.replace("/account/dashboard");
       }

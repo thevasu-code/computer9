@@ -16,6 +16,9 @@ export default function CheckoutPage() {
   const [billing, setBilling] = useState({ name: "", email: "", address: "", phone: "", pincode: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [billingEditMode, setBillingEditMode] = useState(true);
+  const [saveToAccount, setSaveToAccount] = useState(true);
+  const [billingNotice, setBillingNotice] = useState("");
   const router = useRouter();
   const total = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
   const [loggedIn, setLoggedIn] = useState(false);
@@ -23,16 +26,62 @@ export default function CheckoutPage() {
   useEffect(() => {
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
     setLoggedIn(!!token);
+
+    if (token) {
+      fetch("/api/users/me", { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" })
+        .then((res) => res.json())
+        .then((data) => {
+          if (!data || data.error) return;
+          const saved = {
+            name: data.name || "",
+            email: data.email || "",
+            phone: data.phone || data.phoneNumber || data.mobile || "",
+            address: data.billingAddress?.address || data.address || "",
+            pincode: data.billingAddress?.pincode || data.pin || data.pincode || "",
+          };
+          setBilling((prev) => ({ ...prev, ...saved }));
+
+          const hasSavedBilling = Boolean(saved.phone || saved.address || saved.pincode);
+          setBillingEditMode(!hasSavedBilling);
+          if (hasSavedBilling) {
+            setBillingNotice("Using your saved billing details. Click Edit to change.");
+          }
+        })
+        .catch(() => {});
+    }
   }, []);
 
   const handleInput = (e) => {
     setBilling({ ...billing, [e.target.name]: e.target.value });
   };
 
+  const saveBillingProfile = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    await fetch("/api/users/me", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        phone: billing.phone,
+        billingAddress: {
+          address: billing.address,
+          pincode: billing.pincode,
+        },
+      }),
+    });
+  };
+
   const handleRazorpay = async () => {
     setLoading(true);
     setError("");
     try {
+      if (loggedIn && saveToAccount) {
+        await saveBillingProfile();
+      }
+
       const res = await fetch("/api/razorpay", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -134,50 +183,99 @@ export default function CheckoutPage() {
         </div>
       )}
       <form className="space-y-4 mb-8" onSubmit={e => e.preventDefault()}>
-        <input
-          type="text"
-          name="name"
-          placeholder="Full Name"
-          value={billing.name}
-          onChange={handleInput}
-          className="w-full border rounded px-3 py-2"
-          required
-        />
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          value={billing.email}
-          onChange={handleInput}
-          className="w-full border rounded px-3 py-2"
-          required
-        />
-        <input
-          type="tel"
-          name="phone"
-          placeholder="Phone Number"
-          value={billing.phone}
-          onChange={handleInput}
-          className="w-full border rounded px-3 py-2"
-          required
-        />
-        <textarea
-          name="address"
-          placeholder="Billing Address"
-          value={billing.address}
-          onChange={handleInput}
-          className="w-full border rounded px-3 py-2"
-          required
-        />
-        <input
-          type="text"
-          name="pincode"
-          placeholder="Pin Code"
-          value={billing.pincode}
-          onChange={handleInput}
-          className="w-full border rounded px-3 py-2"
-          required
-        />
+        {billingNotice && (
+          <div className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-3 py-2">
+            {billingNotice}
+          </div>
+        )}
+
+        {loggedIn && !billingEditMode ? (
+          <div className="border rounded p-4 bg-gray-50 space-y-2">
+            <div><span className="text-gray-500">Name:</span> {billing.name}</div>
+            <div><span className="text-gray-500">Email:</span> {billing.email}</div>
+            <div><span className="text-gray-500">Phone:</span> {billing.phone || "Not set"}</div>
+            <div><span className="text-gray-500">Address:</span> {billing.address || "Not set"}</div>
+            <div><span className="text-gray-500">Pincode:</span> {billing.pincode || "Not set"}</div>
+            <button
+              type="button"
+              onClick={() => { setBillingEditMode(true); setBillingNotice(""); }}
+              className="mt-2 border border-primary text-primary rounded px-3 py-1.5 text-sm font-medium"
+            >
+              Edit Billing Details
+            </button>
+          </div>
+        ) : (
+          <>
+            <input
+              type="text"
+              name="name"
+              placeholder="Full Name"
+              value={billing.name}
+              onChange={handleInput}
+              className="w-full border rounded px-3 py-2"
+              required
+            />
+            <input
+              type="email"
+              name="email"
+              placeholder="Email"
+              value={billing.email}
+              onChange={handleInput}
+              className="w-full border rounded px-3 py-2"
+              required
+            />
+            <input
+              type="tel"
+              name="phone"
+              placeholder="Phone Number"
+              value={billing.phone}
+              onChange={handleInput}
+              className="w-full border rounded px-3 py-2"
+              required
+            />
+            <textarea
+              name="address"
+              placeholder="Billing Address"
+              value={billing.address}
+              onChange={handleInput}
+              className="w-full border rounded px-3 py-2"
+              required
+            />
+            <input
+              type="text"
+              name="pincode"
+              placeholder="Pin Code"
+              value={billing.pincode}
+              onChange={handleInput}
+              className="w-full border rounded px-3 py-2"
+              required
+            />
+
+            {loggedIn && (
+              <label className="flex items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={saveToAccount}
+                  onChange={(e) => setSaveToAccount(e.target.checked)}
+                />
+                Save these billing details to my account
+              </label>
+            )}
+
+            {loggedIn && (
+              <button
+                type="button"
+                onClick={() => {
+                  setBillingEditMode(false);
+                  setBillingNotice("Updated billing details will be used for this payment.");
+                }}
+                className="border border-gray-300 rounded px-3 py-1.5 text-sm font-medium"
+              >
+                Done Editing
+              </button>
+            )}
+          </>
+        )}
       </form>
       <div className="mb-6 text-xl font-bold text-right">Total: ₹{total}</div>
       {error && <div className="text-red-500 mb-4">{error}</div>}

@@ -11,9 +11,9 @@ export default function AdminAnalytics() {
   const router = useRouter();
 
   useEffect(() => {
-    const token = localStorage.getItem("adminToken");
+    const token = localStorage.getItem("token");
     if (!token) {
-      router.push("/admin/login");
+      router.push("/account/login");
       return;
     }
     const headers = { Authorization: `Bearer ${token}` };
@@ -51,7 +51,39 @@ export default function AdminAnalytics() {
   );
 
   return (
-    <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '32px 16px' }}>
+    <div className="analytics-page" style={{ maxWidth: '1100px', margin: '0 auto', padding: '32px 16px', width: '100%', boxSizing: 'border-box' }}>
+      <style>{`
+        .analytics-panels {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 16px;
+          margin-bottom: 24px;
+        }
+        .analytics-card {
+          min-width: 0;
+        }
+        .top-products-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+          gap: 12px;
+        }
+        @media (max-width: 900px) {
+          .analytics-panels {
+            grid-template-columns: 1fr;
+          }
+        }
+        @media (max-width: 480px) {
+          .analytics-page {
+            padding: 20px 10px;
+          }
+          .analytics-box {
+            padding: 16px 14px;
+          }
+          .top-products-grid {
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+          }
+        }
+      `}</style>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px', flexWrap: 'wrap', gap: '12px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#212121' }}>Analytics</h1>
@@ -76,9 +108,9 @@ export default function AdminAnalytics() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+      <div className="analytics-panels">
         {/* Sales Trends */}
-        <div style={{ background: '#fff', borderRadius: '4px', padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,0.1)', gridColumn: trends.length > 5 ? 'span 2' : '1' }}>
+        <div className="analytics-card analytics-box" style={{ background: '#fff', borderRadius: '4px', padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,0.1)', gridColumn: trends.length > 5 ? 'span 2' : '1' }}>
           <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#212121', marginBottom: '16px', borderBottom: '2px solid #2874f0', paddingBottom: '10px' }}>
             Sales Trends — Last 30 Days
           </h2>
@@ -108,7 +140,7 @@ export default function AdminAnalytics() {
 
         {/* Top products — only show if fits in 2-col layout */}
         {trends.length <= 5 && (
-          <div style={{ background: '#fff', borderRadius: '4px', padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,0.1)' }}>
+          <div className="analytics-card analytics-box" style={{ background: '#fff', borderRadius: '4px', padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,0.1)' }}>
             <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#212121', marginBottom: '16px', borderBottom: '2px solid #ff9f00', paddingBottom: '10px' }}>
               Top Selling Products
             </h2>
@@ -117,7 +149,7 @@ export default function AdminAnalytics() {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {topProducts.map((p, i) => (
-                  <div key={p._id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px', borderRadius: '4px', background: i === 0 ? '#fff8e1' : '#fafafa' }}>
+                  <div key={p._id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px', borderRadius: '4px', background: i === 0 ? '#fff8e1' : '#fafafa', minWidth: 0 }}>
                     <span style={{ fontWeight: 700, color: '#2874f0', fontSize: '16px', width: '20px', flexShrink: 0 }}>#{i + 1}</span>
                     <img src={p.images?.[0] || p.image || '/placeholder.png'} alt={p.title || p.name} style={{ width: '40px', height: '40px', objectFit: 'contain', borderRadius: '4px', background: '#fff', border: '1px solid #f0f0f0' }} />
                     <div style={{ flex: 1, overflow: 'hidden' }}>
@@ -134,16 +166,16 @@ export default function AdminAnalytics() {
 
       {/* Top products full-width when trends has many rows */}
       {trends.length > 5 && (
-        <div style={{ background: '#fff', borderRadius: '4px', padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,0.1)' }}>
+        <div className="analytics-box" style={{ background: '#fff', borderRadius: '4px', padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,0.1)' }}>
           <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#212121', marginBottom: '16px', borderBottom: '2px solid #ff9f00', paddingBottom: '10px' }}>
             Top Selling Products
           </h2>
           {topProducts.length === 0 ? (
             <div style={{ color: '#878787', textAlign: 'center', padding: '24px 0', fontSize: '14px' }}>No product sales data yet.</div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
+            <div className="top-products-grid">
               {topProducts.map((p, i) => (
-                <div key={p._id} style={{ border: '1px solid #f0f0f0', borderRadius: '4px', padding: '16px', textAlign: 'center', background: i === 0 ? '#fff8e1' : '#fff' }}>
+                <div key={p._id} style={{ border: '1px solid #f0f0f0', borderRadius: '4px', padding: '16px', textAlign: 'center', background: i === 0 ? '#fff8e1' : '#fff', minWidth: 0 }}>
                   <span style={{ fontWeight: 700, color: '#2874f0' }}>#{i + 1}</span>
                   <img src={p.images?.[0] || p.image || '/placeholder.png'} alt={p.title || p.name} style={{ width: '60px', height: '60px', objectFit: 'contain', display: 'block', margin: '8px auto' }} />
                   <div style={{ fontSize: '13px', fontWeight: 600, color: '#212121' }}>{p.title || p.name}</div>

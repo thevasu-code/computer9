@@ -18,6 +18,14 @@ const ProductSchema = new mongoose.Schema({
   }],
   tags: [{ type: String }],
   richDescription: { type: String },
+  seo: {
+    metaTitle: { type: String, trim: true, maxlength: 70 },
+    metaDescription: { type: String, trim: true, maxlength: 160 },
+    keywords: [{ type: String, trim: true }],
+    ogImage: { type: String, trim: true },
+    canonicalUrl: { type: String, trim: true },
+    noIndex: { type: Boolean, default: false },
+  },
   discount: { type: Number, default: 0 },
   specs: [{ key: String, value: String }],
 }, { timestamps: true });

@@ -23,8 +23,8 @@ export default function AdminOrders() {
   const router = useRouter();
 
   useEffect(() => {
-    const token = localStorage.getItem('adminToken');
-    if (!token) { router.push('/admin/login'); return; }
+    const token = localStorage.getItem('token');
+    if (!token) { router.push('/account/login'); return; }
     fetch('/api/admin/orders', { headers: { Authorization: `Bearer ${token}` } })
       .then(res => res.json())
       .then(data => {
@@ -39,7 +39,7 @@ export default function AdminOrders() {
   }, [router]);
 
   const handleStatusChange = async (orderId, newStatus) => {
-    const token = localStorage.getItem('adminToken');
+    const token = localStorage.getItem('token');
     setUpdatingId(orderId);
     try {
       const res = await fetch(`/api/orders/status/${orderId}`, {

@@ -12,9 +12,9 @@ export default function AdminDashboard() {
   const router = useRouter();
 
   useEffect(() => {
-    const token = localStorage.getItem("adminToken");
+    const token = localStorage.getItem("token");
     if (!token) {
-      router.push("/admin/login");
+      router.push("/account/login");
       return;
     }
     // Check expiry
@@ -26,8 +26,8 @@ export default function AdminDashboard() {
       }
     })();
     if (!payload || payload.exp < Math.floor(Date.now() / 1000)) {
-      localStorage.removeItem("adminToken");
-      router.push("/admin/login");
+      localStorage.removeItem("token");
+      router.push("/account/login");
       return;
     }
     Promise.all([
@@ -47,24 +47,16 @@ export default function AdminDashboard() {
       setLoading(false);
     }).catch(err => {
       setError("Session expired or unauthorized.");
-      localStorage.removeItem("adminToken");
-      router.push("/admin/login");
+      localStorage.removeItem("token");
+      router.push("/account/login");
     });
   }, [router]);
-
-  const handleLogout = () => {
-    localStorage.removeItem("adminToken");
-    router.push("/admin/login");
-  };
 
   if (loading) return <div className="text-center py-12">Loading...</div>;
   if (error) return <div className="text-center py-12 text-red-500">{error}</div>;
 
   return (
     <div className="max-w-7xl mx-auto py-12 px-4">
-      <div className="flex justify-end mb-4">
-        <button onClick={handleLogout} className="bg-red-500 text-white px-4 py-2 rounded">Logout</button>
-      </div>
       <h1 className="text-4xl font-bold mb-8 text-center">Admin Dashboard</h1>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
         <div className="bg-white rounded shadow p-6">

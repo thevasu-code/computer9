@@ -24,7 +24,7 @@ export default function LoginPage() {
       localStorage.setItem("token", data.token);
       window.dispatchEvent(new Event("userLogin"));
       if (data.user && data.user.isAdmin) {
-        router.push("/admin/dashboard");
+        router.push("/admin");
       } else {
         router.push("/account/dashboard");
       }
