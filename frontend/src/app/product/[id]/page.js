@@ -2,10 +2,11 @@ import { connectDB } from "@/lib/mongodb";
 import Product from "@/models/Product";
 import ProductDetailClient from "./ProductDetailClient";
 import { buildProductSeoKeywords, buildProductStructuredData } from "@/lib/seo";
+import { getSiteUrl } from "@/lib/site";
 
 const defaultTitle = "Product | Computer9";
 const defaultDescription = "Explore product details, pricing, and availability on Computer9.";
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "";
+const siteUrl = getSiteUrl();
 
 export async function generateMetadata({ params }) {
   const { id } = await params;
