@@ -23,7 +23,7 @@ const FOOTER_LINKS = {
 
 function FooterLinkGroup({ title, items }) {
   return (
-    <div>
+    <div className="footer-link-group">
       <h3 style={{ color: "#fff", fontSize: "14px", fontWeight: 700, marginBottom: "12px", letterSpacing: "0.2px" }}>
         {title}
       </h3>
@@ -43,36 +43,41 @@ function FooterLinkGroup({ title, items }) {
 export default function Footer() {
   return (
     <footer style={{ background: "linear-gradient(130deg, #0f2c5d 0%, #133e7f 60%, #0d5e8c 100%)", color: "#fff", marginTop: "28px" }}>
-      <div style={{ maxWidth: "1280px", margin: "0 auto", padding: "26px 16px 14px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr 1fr 1fr", gap: "24px" }}>
-          <div>
+      <div className="footer-wrap" style={{ maxWidth: "1280px", margin: "0 auto", padding: "26px 16px 14px" }}>
+        <div className="footer-grid" style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr 1fr 1fr", gap: "24px" }}>
+          <div className="footer-company">
             <h2 style={{ fontSize: "22px", margin: 0, fontWeight: 800 }}>
               Computer9
             </h2>
-            <p style={{ marginTop: "10px", color: "#d4def0", fontSize: "13px", lineHeight: 1.6, maxWidth: "360px" }}>
+            <p className="footer-company-desc" style={{ marginTop: "10px", color: "#d4def0", fontSize: "13px", lineHeight: 1.6, maxWidth: "360px" }}>
               Trusted electronics and computer store for desktops, laptops, components, and accessories with secure checkout and fast delivery.
             </p>
-            <div style={{ marginTop: "14px", fontSize: "13px", color: "#e5edfb", lineHeight: 1.75 }}>
+            <div className="footer-contact" style={{ marginTop: "14px", fontSize: "13px", color: "#e5edfb", lineHeight: 1.75 }}>
               <div><strong>Contact:</strong> +91 97519 78686</div>
               <div><strong>Email:</strong> info@computer9.in</div>
               <div>
-                <strong>Office:</strong> Located in Luciya City Centre, 5th floor, 29,
-                Shop no 509, 30, Sadar Patrappa Rd, Halsurpete, Nagarathpete,
-                Bengaluru, Karnataka 560002
+                <strong>Office:</strong> Luciya City Centre, Shop 509, Nagarathpete,
+                Bengaluru 560002
               </div>
             </div>
           </div>
 
-          <FooterLinkGroup title="Shop" items={FOOTER_LINKS.shop} />
-          <FooterLinkGroup title="Customer Support" items={FOOTER_LINKS.support} />
-          <FooterLinkGroup title="Policy" items={FOOTER_LINKS.policy} />
+          <div className="footer-col-shop">
+            <FooterLinkGroup title="Shop" items={FOOTER_LINKS.shop} />
+          </div>
+          <div className="footer-col-support">
+            <FooterLinkGroup title="Customer Support" items={FOOTER_LINKS.support} />
+          </div>
+          <div className="footer-col-policy">
+            <FooterLinkGroup title="Policy" items={FOOTER_LINKS.policy} />
+          </div>
         </div>
 
-        <div style={{ borderTop: "1px solid rgba(255,255,255,0.2)", marginTop: "20px", paddingTop: "12px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
-          <p style={{ margin: 0, fontSize: "12px", color: "#d4def0" }}>
+        <div className="footer-bottom" style={{ borderTop: "1px solid rgba(255,255,255,0.2)", marginTop: "20px", paddingTop: "12px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+          <p className="footer-copy" style={{ margin: 0, fontSize: "12px", color: "#d4def0" }}>
             Copyright {new Date().getFullYear()} Computer9. All rights reserved.
           </p>
-          <div style={{ display: "flex", gap: "12px", fontSize: "12px", color: "#d4def0", flexWrap: "wrap" }}>
+          <div className="footer-trust" style={{ display: "flex", gap: "12px", fontSize: "12px", color: "#d4def0", flexWrap: "wrap" }}>
             <span>Secure Payments</span>
             <span>Easy Returns</span>
             <span>Fast Shipping</span>
@@ -83,17 +88,41 @@ export default function Footer() {
 
       <style>{`
         @media (max-width: 980px) {
-          footer > div > div:first-child {
+          .footer-grid {
             grid-template-columns: 1fr 1fr;
           }
         }
         @media (max-width: 620px) {
-          footer > div {
+          .footer-wrap {
             padding: 22px 12px 14px;
           }
-          footer > div > div:first-child {
+          .footer-grid {
             grid-template-columns: 1fr;
             gap: 18px;
+          }
+          .footer-company-desc {
+            display: none;
+          }
+          .footer-col-support,
+          .footer-col-policy,
+          .footer-trust {
+            display: none;
+          }
+          .footer-company {
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            padding-bottom: 10px;
+          }
+          .footer-link-group ul {
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+          }
+          .footer-bottom {
+            margin-top: 12px;
+            padding-top: 10px;
+          }
+          .footer-copy {
+            text-align: center;
+            width: 100%;
           }
         }
       `}</style>
