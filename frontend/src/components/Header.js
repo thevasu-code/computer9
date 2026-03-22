@@ -1,7 +1,7 @@
 
 "use client";
 import React, { useEffect, useState, useCallback, useRef } from "react";
-import { ShoppingCart, Search, X, Menu, Home, Package, LogIn, ChevronRight, User, LogOut, LayoutDashboard } from "lucide-react";
+import { ShoppingCart, Search, X, Menu, Home, LogIn, ChevronRight, User, LogOut, LayoutDashboard, Store } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "../context/CartContext";
@@ -211,11 +211,11 @@ export default function Header() {
         <div style={{ flex: 1, overflowY: "auto" }}>
           <div style={{ padding: "8px 0" }}>
             <NavLink href="/" icon={Home} label="Home" />
+            <NavLink href="/shop" icon={Store} label="Shop" />
             {mounted && userName ? (
               <>
                 {isAdmin && <NavLink href="/admin" icon={LayoutDashboard} label="Admin" />}
                 <NavLink href="/account/dashboard" icon={LayoutDashboard} label="My Dashboard" />
-                <NavLink href="/account/dashboard" icon={Package} label="My Orders" />
                 <NavLink href="/cart" icon={ShoppingCart} label="My Cart" badge={mounted ? cartCount : 0} />
                 <a
                   onClick={() => { closeDrawer(); handleLogout(); }}
@@ -300,6 +300,26 @@ export default function Header() {
               {mobileSearchOpen ? <X size={22} /> : <Search size={22} />}
             </button>
 
+            <Link
+              href="/shop"
+              style={{
+                color: "#fff",
+                textDecoration: "none",
+                border: "1px solid rgba(255,255,255,0.55)",
+                borderRadius: "18px",
+                padding: "6px 12px",
+                fontSize: "13px",
+                fontWeight: 700,
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                whiteSpace: "nowrap",
+              }}
+            >
+              <Store size={14} />
+              Shop
+            </Link>
+
             {mounted && userName && isAdmin && (
               <Link
                 href="/admin"
@@ -344,7 +364,6 @@ export default function Header() {
                   <div style={{ padding: "10px 16px 6px", fontSize: "12px", color: "#878787", borderBottom: "1px solid #f0f0f0" }}>Hello, {userName.split(" ")[0]}</div>
                   {isAdmin && <Link href="/admin" onClick={() => setUserDropdownOpen(false)}><LayoutDashboard size={15} />Admin</Link>}
                   <Link href="/account/dashboard" onClick={() => setUserDropdownOpen(false)}><LayoutDashboard size={15} />My Dashboard</Link>
-                  <Link href="/account/dashboard" onClick={() => setUserDropdownOpen(false)}><Package size={15} />My Orders</Link>
                   <button onClick={handleLogout} style={{ color: "#c62828" }}><LogOut size={15} />Logout</button>
                 </div>
               )}

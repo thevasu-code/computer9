@@ -186,34 +186,14 @@ export default function HomeClient({ initialProducts }) {
         {!selectedCategory && (
           <section className="home-hero">
             <div>
-              <span className="home-hero-kicker">PRO PERFORMANCE COLLECTION</span>
+              <div className="home-hero-kicker">Welcome to Computer9</div>
               <div className="home-hero-title">Professional-Grade Computers, Built For Speed and Reliability</div>
               <div className="home-hero-sub">
                 Discover curated laptops, components, storage, and accessories tuned for creators, office teams, and hardcore gamers.
               </div>
-              <div className="home-hero-metrics">
-                <div className="home-hero-metric">
-                  <strong>{initialProducts.length}+</strong>
-                  <span>Curated products</span>
-                </div>
-                <div className="home-hero-metric">
-                  <strong>{categories.length}</strong>
-                  <span>Technology categories</span>
-                </div>
-                <div className="home-hero-metric">
-                  <strong>24x7</strong>
-                  <span>Order support</span>
-                </div>
-              </div>
+
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '8px', alignSelf: 'end' }}>
-              {featured.map((p, i) => (
-                <div key={p._id} style={{ background: i % 2 ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.13)', border: '1px solid rgba(255,255,255,0.22)', borderRadius: '12px', padding: '9px 10px', fontSize: '12px', lineHeight: 1.35 }}>
-                  <div style={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
-                  <div style={{ marginTop: '2px', opacity: 0.92 }}>{p.category || 'General'}</div>
-                </div>
-              ))}
-            </div>
+
           </section>
         )}
 
