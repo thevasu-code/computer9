@@ -2,7 +2,9 @@ import { NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 import { connectDB } from '@/lib/mongodb';
 import Order from '@/models/Order';
+import Product from '@/models/Product';
 import { verifyToken } from '@/lib/auth';
+import { getSiteUrl } from '@/lib/site';
 
 function getMailTransporter() {
   return nodemailer.createTransport({
@@ -16,10 +18,12 @@ function getMailTransporter() {
 async function sendOrderEmails(order, billing, products) {
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) return;
   const transporter = getMailTransporter();
-  const from = process.env.SMTP_FROM || `Computer9 <${process.env.SMTP_USER}>`;
-  const adminEmail = process.env.ADMIN_EMAIL || process.env.SMTP_USER;
+  const defaultFrom = "Computer9 <admin@computer9.in>";
+  const from = process.env.SMTP_FROM || defaultFrom;
+  const adminEmail = process.env.ADMIN_EMAIL || "admin@computer9.in";
+  const siteUrl = getSiteUrl();
 
-  const rupee = '&#8377;';
+  const rupee = 'Rs ';
 
   // Format order time in IST
   const orderTime = new Date(order.createdAt || Date.now()).toLocaleString('en-IN', {
@@ -28,13 +32,20 @@ async function sendOrderEmails(order, billing, products) {
     timeStyle: 'short',
   });
 
-  const itemRows = products.map(p =>
+  const itemRows = products.map(p => {
+    const productId = p?.product ? String(p.product) : '';
+    const productLink = productId ? `${siteUrl}/product/${productId}` : '';
+    return (
     `<tr>
-      <td style="padding:10px 8px;border-bottom:1px solid #f1f3f6;font-size:14px;">${p.title || 'Product'}</td>
+      <td style="padding:10px 8px;border-bottom:1px solid #f1f3f6;font-size:14px;">
+        <div style="font-weight:600;color:#1f2937;">${p.title || 'Product'}</div>
+        ${productLink ? `<a href="${productLink}" style="display:inline-block;margin-top:4px;font-size:12px;color:#1d4ed8;text-decoration:none;">View Product</a>` : ''}
+      </td>
       <td style="padding:10px 8px;border-bottom:1px solid #f1f3f6;text-align:center;font-size:14px;">${p.quantity}</td>
       <td style="padding:10px 8px;border-bottom:1px solid #f1f3f6;text-align:right;font-size:14px;font-weight:600;">${rupee}${Number(p.price || 0).toLocaleString('en-IN')}</td>
     </tr>`
-  ).join('');
+    );
+  }).join('');
 
   const paymentId = order.paymentInfo?.razorpayPaymentId || order.paymentInfo?.transactionId || 'N/A';
   const paymentMethod = order.paymentInfo?.method || 'Online Payment';
@@ -44,7 +55,7 @@ async function sendOrderEmails(order, billing, products) {
     <div style="max-width:580px;margin:24px auto;border-radius:6px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.1);">
       <div style="background:${accentColor};padding:20px 28px;display:flex;align-items:center;justify-content:space-between;">
         <h2 style="color:#fff;margin:0;font-size:20px;font-weight:700;">${heading}</h2>
-        <span style="color:rgba(255,255,255,0.85);font-size:13px;">Computer9</span>
+        <span style="color:#ffffff;font-size:18px;font-weight:800;letter-spacing:0.3px;">Computer9</span>
       </div>
       <div style="background:#fff;padding:28px;">
         ${intro}
@@ -97,7 +108,7 @@ async function sendOrderEmails(order, billing, products) {
   await transporter.sendMail({
     from,
     to: adminEmail,
-    subject: `&#x1F4E6; New Order #${order._id} \u2014 ${rupee}${Number(order.total || 0).toLocaleString('en-IN')}`,
+    subject: `New Order #${order._id} \u2014 ${rupee}${Number(order.total || 0).toLocaleString('en-IN')}`,
     html: baseHtml(
       '&#x1F4E6; New Order Received',
       `<p style="font-size:15px;color:#212121;margin:0 0 4px;"><strong>Customer:</strong> ${billing.name}</p>
@@ -147,6 +158,28 @@ export async function POST(request) {
       }));
     } else {
       return NextResponse.json({ error: 'Missing cart/items' }, { status: 400 });
+    }
+
+    // Fill missing product titles/images from DB so emails always show real item names.
+    const productIds = products
+      .map((p) => p.product)
+      .filter(Boolean)
+      .map((id) => String(id));
+
+    if (productIds.length > 0) {
+      const dbProducts = await Product.find({ _id: { $in: productIds } })
+        .select('name title images image')
+        .lean();
+
+      const productMap = new Map(dbProducts.map((p) => [String(p._id), p]));
+      products = products.map((p) => {
+        const dbProduct = productMap.get(String(p.product));
+        return {
+          ...p,
+          title: p.title || dbProduct?.name || dbProduct?.title || 'Product',
+          image: p.image || dbProduct?.images?.[0] || dbProduct?.image || '',
+        };
+      });
     }
 
     const order = await Order.create({
