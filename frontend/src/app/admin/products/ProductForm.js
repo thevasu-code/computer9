@@ -192,7 +192,17 @@ export default function ProductForm({ mode = "create", productId }) {
         {form.images.length > 0 && (
           <div className="flex gap-2 flex-wrap justify-center">
             {form.images.map((img, idx) => (
-              <Image key={idx} src={img.startsWith("http") ? img : "/no-image.png"} alt={`Product ${idx + 1}`} width={96} height={96} className="object-contain rounded border" unoptimized />
+              <div key={idx} className="relative">
+                <Image src={img.startsWith("http") ? img : "/no-image.png"} alt={`Product ${idx + 1}`} width={96} height={96} className="object-contain rounded border bg-white" unoptimized />
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, images: form.images.filter((_, i) => i !== idx) })}
+                  className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-6 h-6 text-xs leading-none flex items-center justify-center shadow"
+                  aria-label={`Delete uploaded image ${idx + 1}`}
+                >
+                  x
+                </button>
+              </div>
             ))}
           </div>
         )}
