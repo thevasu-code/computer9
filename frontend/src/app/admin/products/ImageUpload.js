@@ -1,13 +1,16 @@
 "use client";
 import React, { useState, useRef } from "react";
+import { toast } from "react-toastify";
 
 export default function ImageUpload({ onUpload }) {
   const [previews, setPreviews] = useState([]);
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const fileInputRef = useRef(null);
 
   const handleFileChange = (e) => {
+    setError("");
     const selectedFiles = Array.from(e.target.files);
     setFiles(selectedFiles);
     setPreviews(selectedFiles.map(f => URL.createObjectURL(f)));
@@ -29,23 +32,42 @@ export default function ImageUpload({ onUpload }) {
 
   const handleUpload = async () => {
     if (!files.length) return;
+    setError("");
     setLoading(true);
     const uploadedUrls = [];
-    for (const file of files) {
-      const formData = new FormData();
-      formData.append("image", file);
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-      const data = await res.json();
-      if (data.url) uploadedUrls.push(data.url);
+    try {
+      for (const file of files) {
+        const formData = new FormData();
+        formData.append("image", file);
+        const res = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          throw new Error(data.error || `Failed to upload ${file.name}`);
+        }
+
+        if (data.url) uploadedUrls.push(data.url);
+      }
+
+      if (!uploadedUrls.length) {
+        throw new Error("Upload did not return any image URL");
+      }
+
+      onUpload(uploadedUrls);
+      toast.success(`${uploadedUrls.length} image${uploadedUrls.length > 1 ? "s" : ""} uploaded successfully`);
+      setFiles([]);
+      setPreviews([]);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    } catch (err) {
+      const message = err.message || "Upload failed";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-    if (uploadedUrls.length) onUpload(uploadedUrls);
-    setFiles([]);
-    setPreviews([]);
-    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   return (
@@ -92,6 +114,7 @@ export default function ImageUpload({ onUpload }) {
       <button type="button" className="bg-primary text-white px-4 py-2 rounded mt-2" onClick={handleUpload} disabled={loading || !files.length}>
         {loading ? "Uploading..." : "Upload Images"}
       </button>
+      {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
     </div>
   );
 }
