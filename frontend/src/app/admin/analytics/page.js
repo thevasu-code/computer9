@@ -3,9 +3,12 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function AdminAnalytics() {
+  const [viewRange, setViewRange] = useState("weekly");
   const [summary, setSummary] = useState({ totalRevenue: 0, totalOrders: 0 });
   const [trends, setTrends] = useState([]);
   const [topProducts, setTopProducts] = useState([]);
+  const [adminViews, setAdminViews] = useState({ totalViews: 0, uniqueAdminCount: 0, byPage: [] });
+  const [userViews, setUserViews] = useState({ totalViews: 0, uniqueVisitorCount: 0, byPage: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const router = useRouter();
@@ -21,20 +24,38 @@ export default function AdminAnalytics() {
       fetch("/api/analytics/sales-summary", { headers }).then(res => res.json()),
       fetch("/api/analytics/sales-trends", { headers }).then(res => res.json()),
       fetch("/api/analytics/top-products", { headers }).then(res => res.json()),
+      fetch(`/api/analytics/admin-views?range=${viewRange}`, { headers }).then(res => res.json()),
+      fetch(`/api/analytics/user-views?range=${viewRange}`, { headers }).then(res => res.json()),
     ])
-      .then(([summaryData, trendsData, topProductsData]) => {
+      .then(([summaryData, trendsData, topProductsData, adminViewsData, userViewsData]) => {
         if (summaryData && !summaryData.error) setSummary(summaryData);
         if (trendsData && !trendsData.error && typeof trendsData === 'object' && !Array.isArray(trendsData)) {
           setTrends(Object.entries(trendsData).sort((a, b) => a[0].localeCompare(b[0])));
         }
         if (Array.isArray(topProductsData)) setTopProducts(topProductsData);
+        if (adminViewsData && !adminViewsData.error) {
+          setAdminViews({
+            totalViews: adminViewsData.totalViews || 0,
+            uniqueAdminCount: adminViewsData.uniqueAdminCount || 0,
+            byPage: Array.isArray(adminViewsData.byPage) ? adminViewsData.byPage : [],
+          });
+        }
+        if (userViewsData && !userViewsData.error) {
+          setUserViews({
+            totalViews: userViewsData.totalViews || 0,
+            uniqueVisitorCount: userViewsData.uniqueVisitorCount || 0,
+            byPage: Array.isArray(userViewsData.byPage) ? userViewsData.byPage : [],
+          });
+        }
         setLoading(false);
       })
       .catch(err => {
         setError("Failed to load analytics data. Please try again.");
         setLoading(false);
       });
-  }, [router]);
+  }, [router, viewRange]);
+
+  const rangeTitle = viewRange === "weekly" ? "Last 7 Days" : "Last 30 Days";
 
   if (loading) return (
     <div style={{ textAlign: 'center', padding: '60px 0', color: '#878787', fontSize: '16px' }}>
@@ -87,7 +108,19 @@ export default function AdminAnalytics() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px', flexWrap: 'wrap', gap: '12px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#212121' }}>Analytics</h1>
-        <a href="/admin" style={{ fontSize: '13px', color: '#2874f0', textDecoration: 'none' }}>← Back to Dashboard</a>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          <label style={{ fontSize: '13px', color: '#555' }} htmlFor="views-range">Views Range:</label>
+          <select
+            id="views-range"
+            value={viewRange}
+            onChange={(e) => setViewRange(e.target.value)}
+            style={{ border: '1px solid #d4d4d8', borderRadius: '4px', padding: '6px 10px', fontSize: '13px', background: '#fff', color: '#212121' }}
+          >
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+          </select>
+          <a href="/admin" style={{ fontSize: '13px', color: '#2874f0', textDecoration: 'none' }}>← Back to Dashboard</a>
+        </div>
       </div>
 
       {/* Summary cards */}
@@ -106,6 +139,86 @@ export default function AdminAnalytics() {
             ₹{summary.totalOrders ? Math.round(summary.totalRevenue / summary.totalOrders).toLocaleString('en-IN') : 0}
           </div>
         </div>
+        <div style={{ background: '#fff', borderRadius: '4px', padding: '24px', boxShadow: '0 1px 4px rgba(0,0,0,0.1)', borderTop: '4px solid #7c3aed' }}>
+          <div style={{ fontSize: '13px', color: '#878787', marginBottom: '6px' }}>Admin Page Views</div>
+          <div style={{ fontSize: '28px', fontWeight: 700, color: '#212121' }}>{adminViews.totalViews || 0}</div>
+        </div>
+        <div style={{ background: '#fff', borderRadius: '4px', padding: '24px', boxShadow: '0 1px 4px rgba(0,0,0,0.1)', borderTop: '4px solid #0ea5e9' }}>
+          <div style={{ fontSize: '13px', color: '#878787', marginBottom: '6px' }}>Unique Admin Visitors</div>
+          <div style={{ fontSize: '28px', fontWeight: 700, color: '#212121' }}>{adminViews.uniqueAdminCount || 0}</div>
+        </div>
+        <div style={{ background: '#fff', borderRadius: '4px', padding: '24px', boxShadow: '0 1px 4px rgba(0,0,0,0.1)', borderTop: '4px solid #ef4444' }}>
+          <div style={{ fontSize: '13px', color: '#878787', marginBottom: '6px' }}>User Page Views</div>
+          <div style={{ fontSize: '28px', fontWeight: 700, color: '#212121' }}>{userViews.totalViews || 0}</div>
+        </div>
+        <div style={{ background: '#fff', borderRadius: '4px', padding: '24px', boxShadow: '0 1px 4px rgba(0,0,0,0.1)', borderTop: '4px solid #f59e0b' }}>
+          <div style={{ fontSize: '13px', color: '#878787', marginBottom: '6px' }}>Unique Visitors</div>
+          <div style={{ fontSize: '28px', fontWeight: 700, color: '#212121' }}>{userViews.uniqueVisitorCount || 0}</div>
+        </div>
+      </div>
+
+      <div className="analytics-box" style={{ background: '#fff', borderRadius: '4px', padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,0.1)', marginBottom: '24px' }}>
+        <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#212121', marginBottom: '16px', borderBottom: '2px solid #ef4444', paddingBottom: '10px' }}>
+          User Page Views by Route ({rangeTitle})
+        </h2>
+        {userViews.byPage.length === 0 ? (
+          <div style={{ color: '#878787', textAlign: 'center', padding: '24px 0', fontSize: '14px' }}>No user page views tracked yet.</div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+              <thead>
+                <tr style={{ background: '#f1f3f6' }}>
+                  <th style={{ padding: '8px 12px', textAlign: 'left', color: '#212121' }}>Route</th>
+                  <th style={{ padding: '8px 12px', textAlign: 'right', color: '#212121' }}>Views</th>
+                  <th style={{ padding: '8px 12px', textAlign: 'right', color: '#212121' }}>Unique Visitors</th>
+                  <th style={{ padding: '8px 12px', textAlign: 'left', color: '#212121' }}>Last Viewed</th>
+                </tr>
+              </thead>
+              <tbody>
+                {userViews.byPage.map((row) => (
+                  <tr key={row.path} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                    <td style={{ padding: '8px 12px', color: '#444' }}>{row.path}</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 600, color: '#212121' }}>{row.views || 0}</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 600, color: '#212121' }}>{row.uniqueVisitors || 0}</td>
+                    <td style={{ padding: '8px 12px', color: '#444' }}>{row.lastViewedAt ? new Date(row.lastViewedAt).toLocaleString('en-IN') : '-'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      <div className="analytics-box" style={{ background: '#fff', borderRadius: '4px', padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,0.1)', marginBottom: '24px' }}>
+        <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#212121', marginBottom: '16px', borderBottom: '2px solid #7c3aed', paddingBottom: '10px' }}>
+          Admin Page Views by Route ({rangeTitle})
+        </h2>
+        {adminViews.byPage.length === 0 ? (
+          <div style={{ color: '#878787', textAlign: 'center', padding: '24px 0', fontSize: '14px' }}>No admin page views tracked yet.</div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+              <thead>
+                <tr style={{ background: '#f1f3f6' }}>
+                  <th style={{ padding: '8px 12px', textAlign: 'left', color: '#212121' }}>Route</th>
+                  <th style={{ padding: '8px 12px', textAlign: 'right', color: '#212121' }}>Views</th>
+                  <th style={{ padding: '8px 12px', textAlign: 'right', color: '#212121' }}>Unique Admins</th>
+                  <th style={{ padding: '8px 12px', textAlign: 'left', color: '#212121' }}>Last Viewed</th>
+                </tr>
+              </thead>
+              <tbody>
+                {adminViews.byPage.map((row) => (
+                  <tr key={row.path} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                    <td style={{ padding: '8px 12px', color: '#444' }}>{row.path}</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 600, color: '#212121' }}>{row.views || 0}</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 600, color: '#212121' }}>{row.uniqueAdmins || 0}</td>
+                    <td style={{ padding: '8px 12px', color: '#444' }}>{row.lastViewedAt ? new Date(row.lastViewedAt).toLocaleString('en-IN') : '-'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       <div className="analytics-panels">

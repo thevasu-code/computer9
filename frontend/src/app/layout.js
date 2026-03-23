@@ -4,6 +4,7 @@ import "./globals.css";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import ToastProvider from "../components/ToastProvider";
+import UserViewTracker from "../components/UserViewTracker";
 import { CartProvider } from "../context/CartContext";
 import { DEFAULT_DESCRIPTION, DEFAULT_TITLE, SITE_NAME, getSiteUrl } from "@/lib/site";
 
@@ -56,6 +57,7 @@ export default function RootLayout({ children }) {
       <body style={{ fontFamily: "Roboto, 'Helvetica Neue', Arial, sans-serif", background: '#f1f3f6', margin: 0, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
         <CartProvider>
           <ToastProvider />
+          <UserViewTracker />
           <Header />
           <div style={{ flex: 1, background: '#f1f3f6' }}>
             {children}
