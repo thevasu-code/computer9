@@ -1,21 +1,63 @@
 "use client";
-import React, { useState } from "react";
+import React, { useRef } from "react";
+import Link from "next/link";
 import ProductCard from "../components/ProductCard";
 
 const CATEGORY_ICONS = {
-  "Laptops": "💻", "Desktops": "🖥️", "Components": "🔧", "Display": "📺",
-  "Storage": "💾", "Networking": "📡", "Accessories": "🖱️", "Gaming": "🎮",
-  "Printers": "🖨️", "Monitors": "🖥️", "Processors": "⚙️", "Memory": "🔌",
-  "Keyboards": "⌨️", "Headphones": "🎧", "Cameras": "📷",
+  laptop: "💻", laptops: "💻", notebook: "💻",
+  desktop: "🖥️", desktops: "🖥️", pc: "🖥️", computer: "🖥️", computers: "🖥️",
+  monitor: "🖥️", monitors: "🖥️", display: "📺", displays: "📺",
+  component: "🔧", components: "🔧", hardware: "🔧",
+  processor: "⚙️", processors: "⚙️", cpu: "⚙️",
+  gpu: "🎮", "graphics card": "🎮", "graphics cards": "🎮",
+  gaming: "🎮", "gaming accessories": "🎮",
+  memory: "🧩", ram: "🧩",
+  storage: "💾", ssd: "💾", hdd: "💾", "hard drive": "💾",
+  networking: "📡", network: "📡", router: "📡", routers: "📡", wifi: "📡",
+  keyboard: "⌨️", keyboards: "⌨️",
+  mouse: "🖱️", mice: "🖱️",
+  accessory: "🖱️", accessories: "🖱️",
+  headphone: "🎧", headphones: "🎧", headset: "🎧", audio: "🎧", speaker: "🔊", speakers: "🔊",
+  printer: "🖨️", printers: "🖨️", scanner: "🖨️",
+  camera: "📷", cameras: "📷", webcam: "📷",
+  cable: "🔌", cables: "🔌", adapter: "🔌", adapters: "🔌", charger: "🔌", chargers: "🔌",
+  software: "📀", os: "📀",
+  tablet: "📱", tablets: "📱", phone: "📱",
+  ups: "🔋", battery: "🔋", "power supply": "🔋", smps: "🔋", psu: "🔋",
+  motherboard: "🟩", motherboards: "🟩",
+  cabinet: "📦", case: "📦", chassis: "📦",
+  cooler: "❄️", cooling: "❄️", fan: "❄️", fans: "❄️",
+  projector: "📽️", projectors: "📽️",
+  server: "🗄️", servers: "🗄️",
+  furniture: "🪑", chair: "🪑", desk: "🪑",
 };
 
-export default function HomeClient({ initialProducts }) {
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const categories = [...new Set(initialProducts.map((p) => p.category).filter(Boolean))];
-  const filteredProducts = selectedCategory
-    ? initialProducts.filter((p) => p.category === selectedCategory)
-    : initialProducts;
-  const featured = filteredProducts.slice(0, 8);
+function getCategoryIcon(name) {
+  if (!name) return "📦";
+  const lower = name.trim().toLowerCase();
+  if (CATEGORY_ICONS[lower]) return CATEGORY_ICONS[lower];
+  // partial match
+  for (const [key, icon] of Object.entries(CATEGORY_ICONS)) {
+    if (lower.includes(key) || key.includes(lower)) return icon;
+  }
+  return "📦";
+}
+
+export default function HomeClient({ initialProducts, categories = [] }) {
+  // Build category rows: up to 10 categories, each with up to 4 products
+  const productCategories = categories.length > 0
+    ? categories.map((c) => c.name)
+    : [...new Set(initialProducts.map((p) => p.category).filter(Boolean))];
+
+  const displayCategories = productCategories.slice(0, 10);
+
+  const categoryRows = displayCategories
+    .map((catName) => ({
+      name: catName,
+      category: categories.find((c) => c.name === catName),
+      products: initialProducts.filter((p) => p.category === catName).slice(0, 4),
+    }))
+    .filter((row) => row.products.length > 0);
 
   return (
     <div style={{ background: '#edf2f8', minHeight: '100vh' }}>
@@ -76,173 +118,256 @@ export default function HomeClient({ initialProducts }) {
           opacity: 0.92;
           max-width: 560px;
         }
-        .home-hero-metrics {
-          display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 8px;
-          margin-top: 18px;
-        }
-        .home-hero-metric {
-          background: rgba(255, 255, 255, 0.18);
-          border: 1px solid rgba(220, 247, 255, 0.34);
-          border-radius: 12px;
-          padding: 10px;
-        }
-        .home-hero-metric strong {
-          display: block;
-          font-size: 19px;
-        }
-        .home-hero-metric span {
-          font-size: 11px;
-          opacity: 0.88;
-        }
+
+        /* Category strip */
         .home-categories {
           background: #fff;
           border-radius: 14px;
           box-shadow: 0 4px 14px rgba(17, 38, 77, 0.08);
           margin: 0 0 12px;
-          padding: 10px;
+          padding: 14px 10px;
           display: flex;
-          gap: 8px;
+          gap: 6px;
           overflow-x: auto;
           scrollbar-width: none;
+          justify-content: center;
         }
-        .home-cat-btn {
-          border: 1px solid #deebff;
-          color: #1b3f73;
-          background: #f7fbff;
-          border-radius: 999px;
-          padding: 9px 14px;
-          font-size: 13px;
-          font-weight: 600;
-          display: inline-flex;
+        .home-categories::-webkit-scrollbar { display: none; }
+        .home-cat-pill {
+          display: flex;
+          flex-direction: column;
           align-items: center;
-          gap: 8px;
+          gap: 6px;
+          padding: 8px 14px;
+          text-decoration: none;
+          color: #1b3f73;
+          font-size: 12px;
+          font-weight: 600;
           white-space: nowrap;
-          cursor: pointer;
+          border-radius: 12px;
           transition: all 0.18s ease;
+          min-width: 80px;
+          text-align: center;
         }
-        .home-cat-btn:hover {
-          border-color: #9ec3ff;
+        .home-cat-pill:hover {
           background: #edf5ff;
         }
-        .home-cat-btn.active {
-          background: linear-gradient(135deg, #1f5fbf, #2874f0);
-          border-color: #2469d8;
-          color: #fff;
-          box-shadow: 0 6px 14px rgba(40, 116, 240, 0.3);
+        .home-cat-pill-icon {
+          width: 56px;
+          height: 56px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #f0f6ff, #e2edff);
+          border: 2px solid #d8e7ff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 24px;
+          overflow: hidden;
         }
-        .home-section-head {
+        .home-cat-pill-icon img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          border-radius: 50%;
+        }
+
+        /* Category row */
+        .home-cat-row {
           background: #fff;
-          border-radius: 14px 14px 0 0;
-          padding: 16px 18px;
-          border-bottom: 1px solid #e8eef8;
+          border-radius: 14px;
+          box-shadow: 0 4px 14px rgba(17, 38, 77, 0.08);
+          margin-bottom: 12px;
+          overflow: hidden;
+        }
+        .home-cat-row-head {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          gap: 12px;
-          margin-top: 6px;
+          padding: 16px 20px;
+          border-bottom: 1px solid #e8eef8;
         }
-        .home-grid-wrap {
-          background: #fff;
-          border-radius: 0 0 14px 14px;
-          padding: 14px;
-          box-shadow: 0 6px 20px rgba(20, 43, 84, 0.08);
+        .home-cat-row-title {
+          font-size: 20px;
+          font-weight: 800;
+          color: #12284a;
         }
-        .home-product-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(236px, 1fr));
+        .home-cat-row-link {
+          font-size: 13px;
+          font-weight: 700;
+          color: #2874f0;
+          background: #eef4ff;
+          border: 1px solid #d8e7ff;
+          border-radius: 999px;
+          padding: 6px 16px;
+          text-decoration: none;
+          transition: background 0.15s;
+        }
+        .home-cat-row-link:hover {
+          background: #d8e7ff;
+        }
+        .home-cat-row-scroll-wrap {
+          position: relative;
+        }
+        .home-cat-row-scroll {
+          display: flex;
           gap: 14px;
+          padding: 16px 20px;
+          overflow-x: auto;
+          scroll-behavior: smooth;
+          scrollbar-width: none;
         }
+        .home-cat-row-scroll::-webkit-scrollbar { display: none; }
+        .home-cat-row-scroll > div {
+          min-width: 236px;
+          max-width: 280px;
+          flex: 0 0 calc(25% - 11px);
+        }
+        .scroll-arrow {
+          position: absolute;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          background: #fff;
+          border: 1px solid #d8e7ff;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          z-index: 2;
+          font-size: 18px;
+          color: #2874f0;
+          transition: background 0.15s;
+        }
+        .scroll-arrow:hover { background: #eef4ff; }
+        .scroll-arrow-left { left: 6px; }
+        .scroll-arrow-right { right: 6px; }
+
         @keyframes riseUp {
           from { opacity: 0; transform: translateY(14px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        .home-product-grid > div {
+        .home-cat-row-scroll > div {
           animation: riseUp 0.35s ease both;
         }
+
         @media (max-width: 980px) {
           .home-hero {
             grid-template-columns: 1fr;
             padding: 24px 22px;
           }
           .home-hero-title { font-size: 31px; }
+          .home-cat-row-scroll > div {
+            min-width: 200px;
+            flex: 0 0 calc(33.33% - 10px);
+          }
         }
         @media (max-width: 640px) {
           .home-shell { padding: 0 10px 18px; }
           .home-hero { margin-top: 10px; border-radius: 14px; }
           .home-hero-title { font-size: 24px; }
-          .home-hero-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-          .home-product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-          .home-grid-wrap { padding: 8px; }
+          .home-cat-row-scroll > div {
+            min-width: 160px;
+            flex: 0 0 calc(50% - 7px);
+          }
+          .home-cat-row-scroll { padding: 12px; gap: 8px; }
+          .home-categories { padding: 10px 6px; }
+          .home-cat-pill { min-width: 64px; padding: 6px 8px; font-size: 11px; }
+          .home-cat-pill-icon { width: 44px; height: 44px; font-size: 20px; }
         }
       `}</style>
-      {/* Promo strip */}
-      {/* <div style={{ background: '#2874f0', color: '#fff', textAlign: 'center', padding: '4px 0', fontSize: '12px' }}>
-        Free delivery on orders above ₹499 &nbsp;|&nbsp; 10% off on first order &nbsp;|&nbsp; EMI available on orders above ₹3000
-      </div> */}
 
       <div className="home-shell">
-        {!selectedCategory && (
-          <section className="home-hero">
-            <div>
-              <div className="home-hero-kicker">Welcome to Computer9</div>
-              <div className="home-hero-title">Professional-Grade Computers, Built For Speed and Reliability</div>
-              <div className="home-hero-sub">
-                Discover curated laptops, components, storage, and accessories tuned for creators, office teams, and hardcore gamers.
-              </div>
-
+        {/* Hero */}
+        <section className="home-hero">
+          <div>
+            <div className="home-hero-kicker">Welcome to Computer9</div>
+            <div className="home-hero-title">Professional-Grade Computers, Built For Speed and Reliability</div>
+            <div className="home-hero-sub">
+              Discover curated laptops, components, storage, and accessories tuned for creators, office teams, and hardcore gamers.
             </div>
-
-          </section>
-        )}
+          </div>
+        </section>
 
         {/* Category strip */}
-        <div className="home-categories">
-          <button
-            onClick={() => setSelectedCategory("")}
-            className={`home-cat-btn ${!selectedCategory ? 'active' : ''}`}
-          >
-            <span style={{ fontSize: '17px' }}>🏠</span>All
-          </button>
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`home-cat-btn ${selectedCategory === cat ? 'active' : ''}`}
-            >
-              <span style={{ fontSize: '17px' }}>{CATEGORY_ICONS[cat] || '📦'}</span>
-              {cat}
-            </button>
-          ))}
-        </div>
-
-        {/* Section header */}
-        <div className="home-section-head">
-          <span style={{ fontSize: '20px', fontWeight: 800, color: '#12284a' }}>
-            {selectedCategory || 'All Products'}
-          </span>
-          <span style={{ fontSize: '12px', color: '#1f5fbf', background: '#eef4ff', border: '1px solid #d8e7ff', borderRadius: '999px', fontWeight: 700, padding: '6px 10px' }}>
-            {filteredProducts.length} items
-          </span>
-        </div>
-
-        {/* Product Grid */}
-        {filteredProducts.length === 0 ? (
-          <div style={{ background: '#fff', padding: '60px', textAlign: 'center', color: '#878787', fontSize: '15px', borderRadius: '0 0 14px 14px', boxShadow: '0 6px 20px rgba(20, 43, 84, 0.08)' }}>
-            No products found.
+        {displayCategories.length > 0 && (
+          <div className="home-categories">
+            {displayCategories.map((catName) => {
+              const catObj = categories.find((c) => c.name === catName);
+              return (
+                <a key={catName} href={`#cat-${catName.replace(/\s+/g, '-')}`} className="home-cat-pill">
+                  <div className="home-cat-pill-icon">
+                    {catObj?.image ? (
+                      <img src={catObj.image} alt={catName} />
+                    ) : (
+                      getCategoryIcon(catName)
+                    )}
+                  </div>
+                  {catName}
+                </a>
+              );
+            })}
           </div>
-        ) : (
-          <div className="home-grid-wrap">
-            <div className="home-product-grid">
-            {filteredProducts.map((product, i) => (
-              <div key={product._id}>
-                <ProductCard product={product} priority={i < 8} />
-              </div>
-            ))}
+        )}
+
+        {/* Category product rows */}
+        {categoryRows.map((row) => (
+          <CategoryProductRow key={row.name} row={row} />
+        ))}
+
+        {/* If no categories have products, show all */}
+        {categoryRows.length === 0 && initialProducts.length > 0 && (
+          <div className="home-cat-row">
+            <div className="home-cat-row-head">
+              <span className="home-cat-row-title">All Products</span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(236px, 1fr))', gap: '14px', padding: '16px 20px' }}>
+              {initialProducts.slice(0, 8).map((product, i) => (
+                <div key={product._id}>
+                  <ProductCard product={product} priority={i < 4} />
+                </div>
+              ))}
             </div>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function CategoryProductRow({ row }) {
+  const scrollRef = useRef(null);
+
+  const scroll = (dir) => {
+    if (!scrollRef.current) return;
+    const amount = scrollRef.current.offsetWidth * 0.6;
+    scrollRef.current.scrollBy({ left: dir === 'left' ? -amount : amount, behavior: 'smooth' });
+  };
+
+  return (
+    <div className="home-cat-row" id={`cat-${row.name.replace(/\s+/g, '-')}`}>
+      <div className="home-cat-row-head">
+        <span className="home-cat-row-title">{row.name}</span>
+        <Link href={`/shop?category=${encodeURIComponent(row.name)}`} className="home-cat-row-link">
+          View All →
+        </Link>
+      </div>
+      <div className="home-cat-row-scroll-wrap">
+        {row.products.length > 3 && (
+          <>
+            <button className="scroll-arrow scroll-arrow-left" onClick={() => scroll('left')} aria-label="Scroll left">‹</button>
+            <button className="scroll-arrow scroll-arrow-right" onClick={() => scroll('right')} aria-label="Scroll right">›</button>
+          </>
+        )}
+        <div className="home-cat-row-scroll" ref={scrollRef}>
+          {row.products.map((product, i) => (
+            <div key={product._id}>
+              <ProductCard product={product} priority={i < 2} />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

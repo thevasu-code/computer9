@@ -148,6 +148,11 @@ export default function AdminDashboard() {
           <a href="/admin/products" className="text-primary underline">Manage Products</a>
         </div>
         <div className="bg-white rounded shadow p-6">
+          <h2 className="text-2xl font-bold mb-4">Categories</h2>
+          <div className="text-lg mb-2">Organize Products</div>
+          <a href="/admin/categories" className="text-primary underline">Manage Categories</a>
+        </div>
+        <div className="bg-white rounded shadow p-6">
           <h2 className="text-2xl font-bold mb-4">Users</h2>
           <div className="text-lg mb-2">Total: {users.length}</div>
           <a href="/admin/users" className="text-primary underline">Manage Users</a>

@@ -61,6 +61,14 @@ export default function ProductForm({ mode = "create", productId }) {
   const [loading, setLoading] = useState(mode === "edit");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    fetch("/api/categories")
+      .then((res) => res.json())
+      .then((data) => setCategories(Array.isArray(data) ? data : []))
+      .catch(() => setCategories([]));
+  }, []);
 
   useEffect(() => {
     if (mode !== "edit" || !productId) return;
@@ -185,7 +193,12 @@ export default function ProductForm({ mode = "create", productId }) {
           required
         />
         <input name="price" value={form.price} onChange={handleInput} placeholder="Price" type="number" className="w-full border rounded px-3 py-2" required />
-        <input name="category" value={form.category} onChange={handleInput} placeholder="Category" className="w-full border rounded px-3 py-2" />
+        <select name="category" value={form.category} onChange={handleInput} className="w-full border rounded px-3 py-2">
+          <option value="">Select Category</option>
+          {categories.map((cat) => (
+            <option key={cat._id} value={cat.name}>{cat.name}</option>
+          ))}
+        </select>
         <input name="brand" value={form.brand} onChange={handleInput} placeholder="Brand" className="w-full border rounded px-3 py-2" />
         <input name="stock" value={form.stock} onChange={handleInput} placeholder="Stock" type="number" className="w-full border rounded px-3 py-2" />
         <ImageUpload onUpload={handleImageUpload} />
