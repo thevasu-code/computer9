@@ -43,7 +43,7 @@ export default function ProductCard({ product, priority = false }) {
         boxSizing: 'border-box',
       }}
     >
-      <Link href={`/product/${product._id}`} style={{ textDecoration: 'none', width: '100%', minWidth: 0 }}>
+      <Link href={`/product/${product.slug || product._id}`} style={{ textDecoration: 'none', width: '100%', minWidth: 0 }}>
         <div
           className="c9-card-img"
           style={{

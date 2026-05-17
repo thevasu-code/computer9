@@ -24,10 +24,10 @@ export default async function sitemap() {
 
   try {
     await connectDB();
-    const products = await Product.find().select("_id updatedAt").lean();
+    const products = await Product.find().select("_id slug updatedAt").lean();
 
     const productRoutes = products.map((product) => ({
-      url: `${siteUrl}/product/${product._id}`,
+      url: `${siteUrl}/product/${product.slug || product._id}`,
       lastModified: product.updatedAt || now,
       changeFrequency: "daily",
       priority: 0.8,

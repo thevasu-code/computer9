@@ -1,7 +1,21 @@
 import mongoose from 'mongoose';
 
+function generateSlug(name) {
+  if (!name) return '';
+  return name
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 100);
+}
+
 const ProductSchema = new mongoose.Schema({
   name: { type: String, required: true },
+  slug: { type: String, index: true },
   description: { type: String },
   price: { type: Number, required: true },
   originalPrice: { type: Number },
@@ -30,4 +44,24 @@ const ProductSchema = new mongoose.Schema({
   specs: [{ key: String, value: String }],
 }, { timestamps: true });
 
+// Auto-generate slug before saving
+ProductSchema.pre('save', function (next) {
+  if (this.isModified('name') || !this.slug) {
+    let slug = generateSlug(this.name);
+    // Append short unique suffix if slug is empty or too generic
+    if (!slug) slug = `product-${this._id}`;
+    this.slug = slug;
+  }
+  next();
+});
+
+ProductSchema.pre('findOneAndUpdate', function (next) {
+  const update = this.getUpdate();
+  if (update.name && !update.slug) {
+    update.slug = generateSlug(update.name);
+  }
+  next();
+});
+
 export default mongoose.models.Product || mongoose.model('Product', ProductSchema);
+export { generateSlug };

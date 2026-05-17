@@ -135,7 +135,7 @@ export default function Header() {
       <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, background: "#fff", boxShadow: "0 6px 20px rgba(0,0,0,0.15)", zIndex: 300, borderRadius: "8px", maxHeight: "340px", overflowY: "auto", border: "1px solid #e0e0e0" }}>
         {searchResults.length > 0 ? (
           searchResults.slice(0, 7).map(product => (
-            <Link key={product._id} href={`/product/${product._id}`} onClick={() => { setSearch(""); onClose && onClose(); }}
+            <Link key={product._id} href={`/product/${product.slug || product._id}`} onClick={() => { setSearch(""); onClose && onClose(); }}
               style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 14px", textDecoration: "none", color: "#212121", borderBottom: "1px solid #f5f5f5" }}
             >
               <img src={product.images?.[0]?.startsWith("http") ? product.images[0] : "/no-image.png"} alt={product.name} style={{ width: 38, height: 38, objectFit: "contain", borderRadius: 4, border: "1px solid #eee", flexShrink: 0 }} />

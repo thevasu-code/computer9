@@ -65,8 +65,8 @@ export function buildProductSeoKeywords(product = {}) {
 }
 
 export function buildProductStructuredData(product = {}, siteUrl = "") {
-  const productId = product?._id ? String(product._id) : "";
-  const productUrl = siteUrl && productId ? `${siteUrl}/product/${productId}` : undefined;
+  const productSlug = product?.slug || (product?._id ? String(product._id) : "");
+  const productUrl = siteUrl && productSlug ? `${siteUrl}/product/${productSlug}` : undefined;
   const images = Array.isArray(product.images) ? product.images.filter(Boolean) : [];
   const primaryImage = images[0] || product.image;
   const offerUrl = product.seo?.canonicalUrl || productUrl;
@@ -77,7 +77,7 @@ export function buildProductStructuredData(product = {}, siteUrl = "") {
     name: product.name,
     description: product.seo?.metaDescription || product.description || "",
     image: images.length > 0 ? images : primaryImage ? [primaryImage] : undefined,
-    sku: product.sku || productId || undefined,
+    sku: product.sku || productSlug || undefined,
     brand: product.brand
       ? {
           "@type": "Brand",

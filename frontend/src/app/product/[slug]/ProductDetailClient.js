@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useCart } from "../../../context/CartContext";
 
-export default function ProductDetailClient({ id }) {
+export default function ProductDetailClient({ slug }) {
   const [product, setProduct] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -16,11 +16,14 @@ export default function ProductDetailClient({ id }) {
   const imgRef = useRef(null);
 
   useEffect(() => {
-    if (!id || typeof id !== "string") {
+    if (!slug || typeof slug !== "string") {
       setLoading(false);
       return;
     }
-    fetch(`/api/products/${id}`)
+    // Try fetching by slug; if the API doesn't support slug lookup,
+    // we rely on the server to resolve it, but the client needs ID.
+    // So first fetch by slug, then fallback to ID lookup.
+    fetch(`/api/product-by-slug/${slug}`)
       .then((res) => {
         if (!res.ok) throw new Error("Not found");
         return res.json();
@@ -30,10 +33,22 @@ export default function ProductDetailClient({ id }) {
         setLoading(false);
       })
       .catch(() => {
-        setProduct(null);
-        setLoading(false);
+        // Fallback: try direct ID-based API
+        fetch(`/api/products/${slug}`)
+          .then((res) => {
+            if (!res.ok) throw new Error("Not found");
+            return res.json();
+          })
+          .then((data) => {
+            setProduct(data);
+            setLoading(false);
+          })
+          .catch(() => {
+            setProduct(null);
+            setLoading(false);
+          });
       });
-  }, [id]);
+  }, [slug]);
 
   const handleMouseMove = (e) => {
     const rect = e.currentTarget.getBoundingClientRect();

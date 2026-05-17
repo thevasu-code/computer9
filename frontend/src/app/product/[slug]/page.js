@@ -1,5 +1,6 @@
 import { connectDB } from "@/lib/mongodb";
 import Product from "@/models/Product";
+import mongoose from "mongoose";
 import ProductDetailClient from "./ProductDetailClient";
 import { buildProductSeoKeywords, buildProductStructuredData } from "@/lib/seo";
 import { getSiteUrl } from "@/lib/site";
@@ -8,10 +9,21 @@ const defaultTitle = "Product | Computer9";
 const defaultDescription = "Explore product details, pricing, and availability on Computer9.";
 const siteUrl = getSiteUrl();
 
-export async function generateMetadata({ params }) {
-  const { id } = await params;
+async function findProduct(identifier) {
+  await connectDB();
+  // First try slug lookup
+  let product = await Product.findOne({ slug: identifier }).lean();
+  // Fallback to ObjectId
+  if (!product && mongoose.Types.ObjectId.isValid(identifier)) {
+    product = await Product.findById(identifier).lean();
+  }
+  return product;
+}
 
-  if (!id) {
+export async function generateMetadata({ params }) {
+  const { slug } = await params;
+
+  if (!slug) {
     return {
       title: defaultTitle,
       description: defaultDescription,
@@ -19,8 +31,7 @@ export async function generateMetadata({ params }) {
   }
 
   try {
-    await connectDB();
-    const product = await Product.findById(id).lean();
+    const product = await findProduct(slug);
 
     if (!product) {
       return {
@@ -33,7 +44,8 @@ export async function generateMetadata({ params }) {
     const metaDescription = product.seo?.metaDescription?.trim() || product.description?.trim() || defaultDescription;
     const keywords = buildProductSeoKeywords(product);
     const ogImage = product.seo?.ogImage || (Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : product.image);
-    const canonicalUrl = product.seo?.canonicalUrl?.trim() || (siteUrl ? `${siteUrl}/product/${product._id}` : undefined);
+    const productSlug = product.slug || product._id;
+    const canonicalUrl = product.seo?.canonicalUrl?.trim() || (siteUrl ? `${siteUrl}/product/${productSlug}` : undefined);
     const noIndex = Boolean(product.seo?.noIndex);
 
     return {
@@ -64,13 +76,14 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function ProductDetailPage({ params }) {
-  const { id } = await params;
+  const { slug } = await params;
   let structuredData = null;
+  let productId = slug;
 
   try {
-    await connectDB();
-    const product = await Product.findById(id).lean();
+    const product = await findProduct(slug);
     if (product) {
+      productId = product.slug || product._id;
       structuredData = buildProductStructuredData(product, siteUrl);
     }
   } catch {
@@ -85,7 +98,7 @@ export default async function ProductDetailPage({ params }) {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
         />
       )}
-      <ProductDetailClient id={id} />
+      <ProductDetailClient slug={productId} />
     </>
   );
 }

@@ -58,7 +58,7 @@ export default function CartPage() {
                 style={{ width: '96px', height: '96px', objectFit: 'contain', border: '1px solid #f0f0f0', borderRadius: '2px', padding: '4px', flexShrink: 0 }}
               />
               <div style={{ flex: 1 }}>
-                <a href={`/product/${product._id}`} style={{ fontSize: '15px', color: '#212121', marginBottom: '4px', display: 'block', textDecoration: 'none', fontWeight: 500 }}
+                <a href={`/product/${product.slug || product._id}`} style={{ fontSize: '15px', color: '#212121', marginBottom: '4px', display: 'block', textDecoration: 'none', fontWeight: 500 }}
                   onMouseEnter={e => e.currentTarget.style.color = '#2874f0'}
                   onMouseLeave={e => e.currentTarget.style.color = '#212121'}
                 >{product.name}</a>

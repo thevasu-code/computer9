@@ -33,8 +33,8 @@ async function sendOrderEmails(order, billing, products) {
   });
 
   const itemRows = products.map(p => {
-    const productId = p?.product ? String(p.product) : '';
-    const productLink = productId ? `${siteUrl}/product/${productId}` : '';
+    const productSlug = p?.product?.slug ? String(p.product.slug) : (p?.product ? String(p.product) : '');
+    const productLink = productSlug ? `${siteUrl}/product/${productSlug}` : '';
     return (
     `<tr>
       <td style="padding:10px 8px;border-bottom:1px solid #f1f3f6;font-size:14px;">
