@@ -44,6 +44,23 @@ function getCategoryIcon(name) {
 }
 
 export default function HomeClient({ initialProducts, categories = [] }) {
+  // Priority category order (case-insensitive matching)
+  const PRIORITY_ORDER = ["CPU", "Graphics", "Hard Disk", "Laptop"];
+
+  // Normalize a category name for comparison (lowercase, remove hyphens/underscores)
+  const normalize = (s) => s?.toLowerCase().replace(/[-_\s]+/g, ' ') || '';
+
+  // Find the priority index for any category name (case-insensitive, flexible match)
+  const getPriorityIndex = (catName) => {
+    const norm = normalize(catName);
+    for (let i = 0; i < PRIORITY_ORDER.length; i++) {
+      if (norm === normalize(PRIORITY_ORDER[i]) || norm.includes(normalize(PRIORITY_ORDER[i])) || normalize(PRIORITY_ORDER[i]).includes(norm)) {
+        return i;
+      }
+    }
+    return -1;
+  };
+
   // Build category rows: up to 10 categories, each with up to 4 products
   const productCategories = categories.length > 0
     ? categories.map((c) => c.name)
@@ -51,7 +68,17 @@ export default function HomeClient({ initialProducts, categories = [] }) {
 
   const displayCategories = productCategories.slice(0, 10);
 
-  const categoryRows = displayCategories
+  // Sort: priority categories first (in specified order), then rest alphabetically
+  const sortedCategories = [...displayCategories].sort((a, b) => {
+    const aIdx = getPriorityIndex(a);
+    const bIdx = getPriorityIndex(b);
+    if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
+    if (aIdx !== -1) return -1;
+    if (bIdx !== -1) return 1;
+    return a.localeCompare(b);
+  });
+
+  const categoryRows = sortedCategories
     .map((catName) => ({
       name: catName,
       category: categories.find((c) => c.name === catName),
@@ -273,8 +300,16 @@ export default function HomeClient({ initialProducts, categories = [] }) {
             flex: 0 0 calc(50% - 7px);
           }
           .home-cat-row-scroll { padding: 12px; gap: 8px; }
-          .home-categories { padding: 10px 6px; }
-          .home-cat-pill { min-width: 64px; padding: 6px 8px; font-size: 11px; }
+          .home-categories { 
+            padding: 10px 16px; 
+            justify-content: flex-start; 
+            gap: 12px;
+          }
+          .home-cat-pill { 
+            min-width: 56px; 
+            padding: 8px 10px; 
+            font-size: 11px; 
+          }
           .home-cat-pill-icon { width: 44px; height: 44px; font-size: 20px; }
         }
       `}</style>
@@ -292,9 +327,9 @@ export default function HomeClient({ initialProducts, categories = [] }) {
         </section>
 
         {/* Category strip */}
-        {displayCategories.length > 0 && (
+        {sortedCategories.length > 0 && (
           <div className="home-categories">
-            {displayCategories.map((catName) => {
+            {sortedCategories.map((catName) => {
               const catObj = categories.find((c) => c.name === catName);
               return (
                 <a key={catName} href={`#cat-${catName.replace(/\s+/g, '-')}`} className="home-cat-pill">
