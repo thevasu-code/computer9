@@ -6,7 +6,8 @@ import { useCart } from "@/context/CartContext";
 
 function optimizeCloudinary(url, width = 400) {
   if (!url || !url.includes("res.cloudinary.com")) return url;
-  return url.replace("/upload/", `/upload/c_fit,w_${width},f_auto,q_auto/`);
+  // Aggressive CDN optimization: auto format (avif/webp), auto quality, responsive width
+  return url.replace("/upload/", `/upload/c_fit,w_${width},f_auto,q_auto:good,dpr_auto/`);
 }
 
 export default function ProductCard({ product, priority = false }) {
@@ -35,7 +36,7 @@ export default function ProductCard({ product, priority = false }) {
   };
 
   return (
-    <div className="group relative bg-white rounded-xl border border-gray-100 overflow-hidden transition-all duration-200 hover:shadow-lg hover:border-gray-200 hover:-translate-y-0.5 flex flex-col">
+    <div className="group relative bg-white rounded-xl border border-gray-100 overflow-hidden transition-all duration-200 hover:shadow-[0_8px_30px_-4px_rgba(37,99,235,0.12)] hover:border-blue-100 hover:-translate-y-0.5 flex flex-col">
       {/* Badges */}
       <div className="absolute top-2.5 left-2.5 z-10 flex flex-col gap-1">
         {discount > 0 && (

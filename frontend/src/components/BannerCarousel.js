@@ -6,31 +6,27 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 const BANNERS = [
   {
     title: "Upgrade Your Setup",
-    subtitle: "Latest laptops, desktops & components at unbeatable prices",
+    subtitle: "Latest laptops & desktops at unbeatable prices",
     cta: "Shop Now",
     href: "/shop",
-    gradient: "from-blue-600 via-blue-700 to-indigo-800",
+    bg: "bg-slate-900",
+    accent: "text-amber-400",
   },
   {
     title: "Gaming Gear Sale",
-    subtitle: "Keyboards, mice, headsets & GPUs — up to 30% off",
+    subtitle: "GPUs, keyboards & headsets — up to 30% off",
     cta: "View Deals",
     href: "/shop?category=Gaming",
-    gradient: "from-purple-600 via-purple-700 to-fuchsia-800",
+    bg: "bg-indigo-950",
+    accent: "text-cyan-400",
   },
   {
     title: "Networking Essentials",
-    subtitle: "Routers, switches & cables for seamless connectivity",
+    subtitle: "Routers & switches for seamless connectivity",
     cta: "Explore",
     href: "/shop?category=Networking",
-    gradient: "from-emerald-600 via-teal-700 to-cyan-800",
-  },
-  {
-    title: "Storage Solutions",
-    subtitle: "SSDs, HDDs & NAS — keep your data safe & fast",
-    cta: "Shop Storage",
-    href: "/shop?category=Storage",
-    gradient: "from-orange-500 via-red-600 to-rose-700",
+    bg: "bg-emerald-950",
+    accent: "text-emerald-300",
   },
 ];
 
@@ -43,7 +39,7 @@ export default function BannerCarousel() {
 
   useEffect(() => {
     if (paused) return;
-    const timer = setInterval(next, 5000);
+    const timer = setInterval(next, 4500);
     return () => clearInterval(timer);
   }, [paused, next]);
 
@@ -51,24 +47,25 @@ export default function BannerCarousel() {
 
   return (
     <section
-      className="relative overflow-hidden rounded-2xl"
+      className="relative overflow-hidden rounded-xl"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      <div className={`bg-gradient-to-br ${banner.gradient} text-white p-8 sm:p-12 lg:p-16 transition-all duration-500`}>
-        <div className="relative z-10 max-w-2xl">
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold leading-tight">
-            {banner.title}
-          </h2>
-          <p className="mt-3 text-sm sm:text-base text-white/80 max-w-md">
-            {banner.subtitle}
-          </p>
+      <div className={`${banner.bg} text-white px-8 py-7 sm:px-12 sm:py-8 transition-colors duration-500`}>
+        <div className="flex items-center justify-between gap-8">
+          <div>
+            <h2 className={`text-lg sm:text-xl font-bold ${banner.accent}`}>
+              {banner.title}
+            </h2>
+            <p className="mt-1 text-sm text-white/70 max-w-sm">
+              {banner.subtitle}
+            </p>
+          </div>
           <Link
             href={banner.href}
-            className="mt-5 inline-flex items-center gap-2 px-6 py-3 bg-white text-gray-900 font-semibold rounded-lg shadow-lg hover:shadow-xl hover:bg-gray-50 transition-all text-sm"
+            className="shrink-0 px-5 py-2.5 bg-white text-gray-900 font-semibold rounded-lg text-sm hover:bg-gray-100 transition-colors"
           >
             {banner.cta}
-            <ChevronRight size={16} />
           </Link>
         </div>
       </div>
@@ -76,26 +73,26 @@ export default function BannerCarousel() {
       {/* Nav Arrows */}
       <button
         onClick={prev}
-        className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+        className="absolute left-3 top-1/2 -translate-y-1/2 w-7 h-7 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center text-white/80 hover:bg-white/20 transition-colors"
         aria-label="Previous"
       >
-        <ChevronLeft size={18} />
+        <ChevronLeft size={14} />
       </button>
       <button
         onClick={next}
-        className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+        className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center text-white/80 hover:bg-white/20 transition-colors"
         aria-label="Next"
       >
-        <ChevronRight size={18} />
+        <ChevronRight size={14} />
       </button>
 
       {/* Dots */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
+      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
         {BANNERS.map((_, i) => (
           <button
             key={i}
             onClick={() => setCurrent(i)}
-            className={`w-2 h-2 rounded-full transition-all ${i === current ? "bg-white w-6" : "bg-white/40"}`}
+            className={`h-1.5 rounded-full transition-all ${i === current ? "bg-white w-4" : "bg-white/30 w-1.5"}`}
             aria-label={`Slide ${i + 1}`}
           />
         ))}
