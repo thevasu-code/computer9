@@ -1,10 +1,9 @@
-
 "use client";
 import React, { useEffect, useState, useCallback, useRef } from "react";
-import { ShoppingCart, Search, X, Menu, Home, LogIn, ChevronRight, User, LogOut, LayoutDashboard, Store } from "lucide-react";
+import { ShoppingCart, Search, X, Menu, Home, LogIn, User, LogOut, LayoutDashboard, Store, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCart } from "../context/CartContext";
+import { useCart } from "@/context/CartContext";
 
 export default function Header() {
   const router = useRouter();
@@ -19,7 +18,9 @@ export default function Header() {
   const userDropdownRef = useRef(null);
   const [searchResults, setSearchResults] = useState([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [searchFocused, setSearchFocused] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const searchRef = useRef(null);
 
   const fetchUserName = useCallback(() => {
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
@@ -29,10 +30,10 @@ export default function Header() {
         setIsAdmin(Boolean(payload?.isAdmin || payload?.role === "admin"));
         if (payload && payload.id) {
           fetch(`/api/users/${payload.id}`)
-            .then(res => res.json())
-            .then(data => { if (data && data.name) setUserName(data.name); });
+            .then((res) => res.json())
+            .then((data) => { if (data && data.name) setUserName(data.name); });
         }
-      } catch {}
+      } catch { /* ignore */ }
     } else {
       setUserName("");
       setIsAdmin(false);
@@ -42,9 +43,13 @@ export default function Header() {
   useEffect(() => {
     setMounted(true);
     fetchUserName();
-    fetch("/api/products")
-      .then(res => res.json())
-      .then(data => { setProducts(data); });
+    fetch("/api/products?limit=100")
+      .then((res) => res.json())
+      .then((data) => {
+        const list = Array.isArray(data) ? data : data?.items || [];
+        setProducts(list);
+      })
+      .catch(() => {});
 
     window.addEventListener("userLogin", fetchUserName);
     window.addEventListener("storage", fetchUserName);
@@ -54,15 +59,27 @@ export default function Header() {
     };
   }, [fetchUserName]);
 
+  const [cartBounce, setCartBounce] = useState(false);
+
   useEffect(() => {
     setCartCount(cart.reduce((sum, item) => sum + item.quantity, 0));
   }, [cart]);
 
-  // Close user dropdown on outside click
+  useEffect(() => {
+    if (cartCount > 0) {
+      setCartBounce(true);
+      const t = setTimeout(() => setCartBounce(false), 400);
+      return () => clearTimeout(t);
+    }
+  }, [cartCount]);
+
   useEffect(() => {
     const handler = (e) => {
       if (userDropdownRef.current && !userDropdownRef.current.contains(e.target)) {
         setUserDropdownOpen(false);
+      }
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setSearchFocused(false);
       }
     };
     document.addEventListener("mousedown", handler);
@@ -70,11 +87,8 @@ export default function Header() {
   }, []);
 
   useEffect(() => {
-    if (drawerOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
+    if (drawerOpen) document.body.style.overflow = "hidden";
+    else document.body.style.overflow = "";
     return () => { document.body.style.overflow = ""; };
   }, [drawerOpen]);
 
@@ -82,17 +96,16 @@ export default function Header() {
     if (search.length >= 2) {
       const lower = search.toLowerCase();
       setSearchResults(
-        products.filter(p =>
+        products.filter((p) =>
           (p.name && p.name.toLowerCase().includes(lower)) ||
-          (p.category && p.category.toLowerCase().includes(lower))
-        )
+          (p.category && p.category.toLowerCase().includes(lower)) ||
+          (p.brand && p.brand.toLowerCase().includes(lower))
+        ).slice(0, 8)
       );
     } else {
       setSearchResults([]);
     }
   }, [search, products]);
-
-  const closeDrawer = useCallback(() => setDrawerOpen(false), []);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -104,308 +117,297 @@ export default function Header() {
     router.push("/account/login");
   };
 
-  const NavLink = ({ href, icon: Icon, label, badge }) => (
-    <Link
-      href={href}
-      onClick={closeDrawer}
-      style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "15px 20px", color: "#212121", textDecoration: "none",
-        fontSize: "15px", fontWeight: 500, borderBottom: "1px solid #f0f0f0",
-        background: "#fff", transition: "background 0.15s",
-      }}
-      onMouseEnter={e => e.currentTarget.style.background = "#f5f5f5"}
-      onMouseLeave={e => e.currentTarget.style.background = "#fff"}
-    >
-      <span style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-        <span style={{ color: "#2874f0" }}><Icon size={18} /></span>
-        {label}
-      </span>
-      <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-        {badge > 0 && (
-          <span style={{ background: "#ff9f00", color: "#fff", borderRadius: "10px", fontSize: "11px", fontWeight: 700, padding: "1px 7px" }}>{badge}</span>
-        )}
-        <ChevronRight size={16} style={{ color: "#bbb" }} />
-      </span>
-    </Link>
-  );
-
-  const SearchDropdown = ({ onClose }) =>
-    search.length >= 2 ? (
-      <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, background: "#fff", boxShadow: "0 6px 20px rgba(0,0,0,0.15)", zIndex: 300, borderRadius: "8px", maxHeight: "340px", overflowY: "auto", border: "1px solid #e0e0e0" }}>
-        {searchResults.length > 0 ? (
-          searchResults.slice(0, 7).map(product => (
-            <Link key={product._id} href={`/product/${product.slug || product._id}`} onClick={() => { setSearch(""); onClose && onClose(); }}
-              style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 14px", textDecoration: "none", color: "#212121", borderBottom: "1px solid #f5f5f5" }}
-            >
-              <img src={product.images?.[0]?.startsWith("http") ? product.images[0] : "/no-image.png"} alt={product.name} style={{ width: 38, height: 38, objectFit: "contain", borderRadius: 4, border: "1px solid #eee", flexShrink: 0 }} />
-              <span style={{ fontSize: "13px", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{product.name}</span>
-              <span style={{ fontSize: "13px", color: "#2874f0", fontWeight: 700, flexShrink: 0, marginLeft: "8px" }}>&#8377;{product.price?.toLocaleString('en-IN')}</span>
-            </Link>
-          ))
-        ) : (
-          <div style={{ padding: "14px", color: "#888", fontSize: "13px", textAlign: "center" }}>No products found</div>
-        )}
-      </div>
-    ) : null;
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (search.trim()) {
+      router.push(`/shop?search=${encodeURIComponent(search.trim())}`);
+      setSearch("");
+      setSearchFocused(false);
+      setMobileSearchOpen(false);
+    }
+  };
 
   return (
     <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800;900&display=swap');
-        .c9hdr-search { display: flex; flex: 1; position: relative; max-width: 600px; }
-        .c9hdr-login { display: flex; }
-        .c9hdr-cart-label { display: inline; }
-        .c9hdr-mob-search { display: none; }
-        .c9hdr-hamburger { display: none; }
-        .c9hdr-logo-text { font-family: 'Orbitron', sans-serif; font-weight: 800; font-size: 24px; line-height: 1; letter-spacing: 1px; color: #fff; text-shadow: 1px 1px 0 rgba(0,0,80,0.4), 2px 2px 0 rgba(0,0,80,0.3), 3px 3px 0 rgba(0,0,80,0.2), 0 0 18px rgba(255,255,255,0.5), 0 0 40px rgba(100,160,255,0.25); }
-        .c9hdr-logo-text .c9logo-9 { font-weight: 900; color: #ffe500; text-shadow: 1px 1px 0 rgba(180,90,0,0.5), 2px 2px 0 rgba(180,90,0,0.3), 0 0 14px rgba(255,229,0,0.8), 0 0 32px rgba(255,160,0,0.4); }
-        @media (max-width: 640px) {
-          .c9hdr-logo-text { font-size: 20px; letter-spacing: 0.5px; }
-          .c9hdr-logo-text .c9logo-9 { font-size: 20px; }
-          .c9hdr-search { display: none !important; }
-          .c9hdr-login { display: none !important; }
-          .c9hdr-cart-label { display: none; }
-          .c9hdr-mob-search { display: flex !important; }
-          .c9hdr-hamburger { display: flex !important; }
-          header > div > div:first-child { grid-column: 1; }
-          header > div { grid-template-columns: auto 1fr auto !important; }
-        }
-        .c9hdr-user-menu { position: absolute; top: calc(100% + 8px); right: 0; min-width: 180px; background: #fff; border-radius: 4px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); z-index: 200; overflow: hidden; }
-        .c9hdr-user-menu a, .c9hdr-user-menu button { display: flex; align-items: center; gap: 10px; padding: 12px 16px; font-size: 14px; color: #212121; text-decoration: none; background: none; border: none; width: 100%; cursor: pointer; border-bottom: 1px solid #f0f0f0; }
-        .c9hdr-user-menu a:hover, .c9hdr-user-menu button:hover { background: #f1f3f6; }
-      `}</style>
-
-      {/* Drawer backdrop */}
+      {/* Mobile Drawer Backdrop */}
       {drawerOpen && (
         <div
-          onClick={closeDrawer}
-          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 998, backdropFilter: "blur(1px)" }}
+          onClick={() => setDrawerOpen(false)}
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[998] lg:hidden"
+          aria-hidden="true"
         />
       )}
 
-      {/* Side Drawer */}
-      <div style={{
-        position: "fixed", top: 0, left: 0, height: "100%", width: "300px", maxWidth: "85vw",
-        background: "#fff", zIndex: 999, boxShadow: "4px 0 24px rgba(0,0,0,0.18)",
-        transform: drawerOpen ? "translateX(0)" : "translateX(-100%)",
-        transition: "transform 0.28s cubic-bezier(0.4,0,0.2,1)",
-        display: "flex", flexDirection: "column",
-      }}>
-        {/* Drawer header */}
-        <div style={{ background: "#2874f0", padding: "20px 16px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      {/* Mobile Drawer */}
+      <div
+        className={`fixed top-0 left-0 h-full w-[300px] max-w-[85vw] bg-white z-[999] shadow-2xl transform transition-transform duration-300 ease-in-out flex flex-col lg:hidden ${
+          drawerOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-5 flex items-center justify-between">
           <div>
-            <div style={{ color: "#fff", fontWeight: 700, fontSize: "17px" }}>
-              {mounted && userName ? userName : "Hello, Sign In"}
-            </div>
-            <div style={{ color: "rgba(255,255,255,0.75)", fontSize: "12px", marginTop: "2px" }}>
-              {mounted && userName ? "Welcome back!" : "Manage your account"}
-            </div>
+            <p className="text-white font-bold text-base">
+              {mounted && userName ? userName : "Hello, Guest"}
+            </p>
+            <p className="text-blue-200 text-xs mt-0.5">
+              {mounted && userName ? "Welcome back!" : "Sign in for the best experience"}
+            </p>
           </div>
-          <button onClick={closeDrawer} style={{ background: "rgba(255,255,255,0.15)", border: "none", borderRadius: "50%", width: 34, height: 34, cursor: "pointer", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <X size={18} />
+          <button
+            onClick={() => setDrawerOpen(false)}
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors"
+            aria-label="Close menu"
+          >
+            <X size={16} />
           </button>
         </div>
 
-        {/* Drawer nav */}
-        <div style={{ flex: 1, overflowY: "auto" }}>
-          <div style={{ padding: "8px 0" }}>
-            <NavLink href="/" icon={Home} label="Home" />
-            <NavLink href="/shop" icon={Store} label="Shop" />
-            {mounted && userName ? (
-              <>
-                {isAdmin && <NavLink href="/admin" icon={LayoutDashboard} label="Admin" />}
-                <NavLink href="/account/dashboard" icon={LayoutDashboard} label="My Dashboard" />
-                <NavLink href="/cart" icon={ShoppingCart} label="My Cart" badge={mounted ? cartCount : 0} />
-                <a
-                  onClick={() => { closeDrawer(); handleLogout(); }}
-                  style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "15px 20px", color: "#c62828", textDecoration: "none", fontSize: "15px", fontWeight: 500, borderBottom: "1px solid #f0f0f0", background: "#fff", cursor: "pointer" }}
+        <nav className="flex-1 overflow-y-auto py-2">
+          <DrawerLink href="/" icon={Home} label="Home" onClick={() => setDrawerOpen(false)} />
+          <DrawerLink href="/shop" icon={Store} label="Shop" onClick={() => setDrawerOpen(false)} />
+          {mounted && userName ? (
+            <>
+              {isAdmin && <DrawerLink href="/admin" icon={LayoutDashboard} label="Admin Dashboard" onClick={() => setDrawerOpen(false)} />}
+              <DrawerLink href="/account/dashboard" icon={User} label="My Account" onClick={() => setDrawerOpen(false)} />
+              <DrawerLink href="/cart" icon={ShoppingCart} label="Cart" badge={cartCount} onClick={() => setDrawerOpen(false)} />
+              <div className="border-t border-gray-100 mt-2 pt-2">
+                <button
+                  onClick={() => { setDrawerOpen(false); handleLogout(); }}
+                  className="flex items-center gap-3 w-full px-5 py-3.5 text-red-600 text-sm font-medium hover:bg-red-50 transition-colors"
                 >
-                  <span style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-                    <LogOut size={18} />Logout
-                  </span>
-                </a>
-              </>
-            ) : (
-              <>
-                <NavLink href="/cart" icon={ShoppingCart} label="My Cart" badge={mounted ? cartCount : 0} />
-                <NavLink href="/account/login" icon={LogIn} label="Login / Register" />
-              </>
-            )}
-          </div>
+                  <LogOut size={18} />
+                  Sign Out
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <DrawerLink href="/cart" icon={ShoppingCart} label="Cart" badge={cartCount} onClick={() => setDrawerOpen(false)} />
+              <DrawerLink href="/account/login" icon={LogIn} label="Sign In" onClick={() => setDrawerOpen(false)} />
+            </>
+          )}
+        </nav>
 
-        </div>
-
-        {/* Drawer footer */}
-        <div style={{ padding: "14px 20px", borderTop: "1px solid #f0f0f0", fontSize: "12px", color: "#aaa", textAlign: "center" }}>
-          Computer9 &copy; {new Date().getFullYear()}
+        <div className="px-5 py-4 border-t border-gray-100 text-center text-xs text-gray-400">
+          &copy; {new Date().getFullYear()} Computer9
         </div>
       </div>
 
-      {/* Sticky header bar */}
-      <header style={{ background: "#2874f0", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 2px 8px rgba(0,0,0,0.18)" }}>
-        <div style={{ maxWidth: "1280px", margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 2fr 1fr", alignItems: "center", padding: "10px 16px" }}>
-
-          {/* LEFT: hamburger + logo */}
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            {/* Mobile: hamburger */}
-            <button className="c9hdr-hamburger" onClick={() => setDrawerOpen(true)}
-              style={{ background: "none", border: "none", cursor: "pointer", color: "#fff", padding: "4px 6px 4px 0", display: "none", alignItems: "center" }}>
-              <Menu size={24} />
-            </button>
-
-            {/* Logo */}
-            <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "8px" }}>
-              <div style={{ background: "#fff", borderRadius: "8px", padding: "3px", display: "flex", alignItems: "center", justifyContent: "center", width: 38, height: 38, flexShrink: 0, boxShadow: "0 1px 4px rgba(0,0,0,0.15)" }}>
-                <img src="/logo.svg" alt="Computer9" style={{ width: 32, height: 32, objectFit: "contain" }} />
-              </div>
-              <div>
-                <div className="c9hdr-logo-text">Computer<span className="c9logo-9">9</span></div>
-                {/* <div style={{ color: "#ffe500", fontSize: "10px", fontStyle: "italic", marginTop: "1px" }}>
-                  Explore <span style={{ textDecoration: "underline" }}>Plus</span> ✦
-                </div> */}
-              </div>
-            </Link>
-          </div>
-
-          {/* CENTER: Desktop search bar — truly centered */}
-          <div className="c9hdr-search" style={{ display: "flex", justifyContent: "center", padding: "0 12px" }}>
-            <div style={{ width: "100%", maxWidth: "700px", position: "relative" }}>
-              <div style={{ display: "flex", background: "#fff", borderRadius: "24px", overflow: "hidden", boxShadow: "0 1px 6px rgba(0,0,0,0.18)", border: "2px solid transparent", transition: "border-color 0.2s" }}
-                onFocusCapture={e => e.currentTarget.style.borderColor = "#ff9f00"}
-                onBlurCapture={e => e.currentTarget.style.borderColor = "transparent"}
+      {/* Main Header */}
+      <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16 gap-4">
+            {/* Left: Hamburger + Logo */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setDrawerOpen(true)}
+                className="lg:hidden p-2 -ml-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                aria-label="Open menu"
               >
+                <Menu size={22} />
+              </button>
+
+              <Link href="/" className="flex items-center gap-2 shrink-0">
+                <img src="/logo.svg" alt="Computer9" className="w-8 h-8" />
+                <span className="text-xl sm:text-2xl font-bold text-blue-900" style={{ fontFamily: "Arial Rounded MT Bold, Arial, sans-serif" }}>
+                  Computer<span className="text-orange-500">9</span>
+                </span>
+              </Link>
+            </div>
+
+            {/* Center: Search */}
+            <div ref={searchRef} className="hidden md:block flex-1 max-w-xl relative">
+              <form onSubmit={handleSearchSubmit} className="relative">
                 <input
                   type="text"
                   value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  placeholder="Search for products, brands and more"
-                  style={{ flex: 1, border: "none", outline: "none", padding: "8px 16px", fontSize: "14px", background: "transparent" }}
+                  onChange={(e) => setSearch(e.target.value)}
+                  onFocus={() => setSearchFocused(true)}
+                  placeholder="Search for products, brands..."
+                  className="w-full pl-11 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-full text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 focus:bg-white transition-all"
                   autoComplete="off"
                 />
-                <button style={{ background: "#ff9f00", border: "none", padding: "0 18px", cursor: "pointer", color: "#fff", borderRadius: "0 22px 22px 0", display: "flex", alignItems: "center" }}>
-                  <Search size={18} />
-                </button>
-              </div>
-              <SearchDropdown />
-            </div>
-          </div>
+                <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                {search && (
+                  <button
+                    type="button"
+                    onClick={() => setSearch("")}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <X size={16} />
+                  </button>
+                )}
+              </form>
 
-          {/* RIGHT: actions */}
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", justifyContent: "flex-end" }}>
-            {/* Mobile: search icon */}
-            <button className="c9hdr-mob-search"
-              onClick={() => setMobileSearchOpen(v => !v)}
-              style={{ background: "none", border: "none", cursor: "pointer", color: "#fff", padding: "4px", display: "none", alignItems: "center" }}>
-              {mobileSearchOpen ? <X size={22} /> : <Search size={22} />}
-            </button>
-
-            <Link
-              href="/shop"
-              style={{
-                color: "#fff",
-                textDecoration: "none",
-                border: "1px solid rgba(255,255,255,0.55)",
-                borderRadius: "18px",
-                padding: "6px 12px",
-                fontSize: "13px",
-                fontWeight: 700,
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                whiteSpace: "nowrap",
-              }}
-            >
-              <Store size={14} />
-              Shop
-            </Link>
-
-            {mounted && userName && isAdmin && (
-              <Link
-                href="/admin"
-                style={{
-                  background: "#ff9f00",
-                  color: "#fff",
-                  borderRadius: "20px",
-                  padding: "7px 14px",
-                  fontSize: "13px",
-                  fontWeight: 700,
-                  textDecoration: "none",
-                  whiteSpace: "nowrap",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  boxShadow: "0 1px 4px rgba(0,0,0,0.12)",
-                }}
-              >
-                <LayoutDashboard size={14} />
-                Manage Admin Dashboard
-              </Link>
-            )}
-
-            {/* Desktop: User account button + dropdown */}
-            <div className="c9hdr-login" ref={userDropdownRef} style={{ position: "relative" }}>
-              <button
-                onClick={() => {
-                  if (mounted && userName) {
-                    setUserDropdownOpen(v => !v);
-                  } else {
-                    router.push("/account/login");
-                  }
-                }}
-                style={{ background: "#fff", color: "#2874f0", borderRadius: "20px", padding: "7px 16px", fontSize: "14px", fontWeight: 600, border: "none", cursor: "pointer", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: "6px", boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }}
-              >
-                <User size={15} />
-                {mounted && userName ? userName.split(" ")[0] : "Login"}
-                {mounted && userName && <ChevronRight size={13} style={{ transform: userDropdownOpen ? "rotate(-90deg)" : "rotate(90deg)", transition: "transform 0.2s" }} />}
-              </button>
-              {userDropdownOpen && mounted && userName && (
-                <div className="c9hdr-user-menu">
-                  <div style={{ padding: "10px 16px 6px", fontSize: "12px", color: "#878787", borderBottom: "1px solid #f0f0f0" }}>Hello, {userName.split(" ")[0]}</div>
-                  {isAdmin && <Link href="/admin" onClick={() => setUserDropdownOpen(false)}><LayoutDashboard size={15} />Admin</Link>}
-                  <Link href="/account/dashboard" onClick={() => setUserDropdownOpen(false)}><LayoutDashboard size={15} />My Dashboard</Link>
-                  <button onClick={handleLogout} style={{ color: "#c62828" }}><LogOut size={15} />Logout</button>
+              {/* Search Dropdown */}
+              {searchFocused && searchResults.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden z-50">
+                  {searchResults.map((product) => (
+                    <Link
+                      key={product._id}
+                      href={`/product/${product.slug || product._id}`}
+                      onClick={() => { setSearch(""); setSearchFocused(false); }}
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0"
+                    >
+                      <img
+                        src={product.images?.[0]?.startsWith("http") ? product.images[0] : "/logo.svg"}
+                        alt=""
+                        className="w-10 h-10 object-contain rounded-lg bg-gray-50 border border-gray-100 p-1"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-gray-800 truncate">{product.name}</p>
+                        <p className="text-xs text-gray-400">{product.category}</p>
+                      </div>
+                      <span className="text-sm font-bold text-gray-900 shrink-0">
+                        ₹{product.price?.toLocaleString("en-IN")}
+                      </span>
+                    </Link>
+                  ))}
                 </div>
               )}
             </div>
 
+            {/* Right: Actions */}
+            <div className="flex items-center gap-2">
+              {/* Mobile search toggle */}
+              <button
+                onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
+                className="md:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                aria-label="Search"
+              >
+                {mobileSearchOpen ? <X size={20} /> : <Search size={20} />}
+              </button>
 
+              {/* Shop link with mega menu — desktop */}
+              <div className="hidden lg:block relative group">
+                <Link
+                  href="/shop"
+                  className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                >
+                  <Store size={16} />
+                  Shop
+                  <ChevronDown size={14} className="text-gray-400 group-hover:text-blue-500 transition-colors" />
+                </Link>
+                {/* Mega Menu Dropdown */}
+                <div className="absolute top-full left-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                  <div className="bg-white border border-gray-200 rounded-xl shadow-xl p-4 w-[420px] grid grid-cols-2 gap-1">
+                    {products.slice(0, 8).map((p) => p.category).filter((v, i, a) => v && a.indexOf(v) === i).slice(0, 8).map((cat) => (
+                      <Link key={cat} href={`/shop?category=${encodeURIComponent(cat)}`}
+                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg hover:bg-blue-50 transition-colors">
+                        <span className="w-2 h-2 rounded-full bg-blue-500" />
+                        <span className="text-sm text-gray-700 font-medium">{cat}</span>
+                      </Link>
+                    ))}
+                    <div className="col-span-2 border-t border-gray-100 pt-2 mt-1">
+                      <Link href="/shop" className="text-xs text-blue-600 font-semibold hover:text-blue-700">
+                        Browse All Products →
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-            {/* Cart */}
-            <Link href="/cart" style={{ color: "#fff", textDecoration: "none", display: "flex", alignItems: "center", gap: "5px", position: "relative", fontSize: "14px", fontWeight: 500, flexShrink: 0 }}>
-              <span style={{ position: "relative", display: "inline-flex" }}>
-                <ShoppingCart size={22} />
-                {mounted && cartCount > 0 && (
-                  <span style={{ position: "absolute", top: "-8px", right: "-8px", background: "#ff9f00", color: "#fff", borderRadius: "50%", fontSize: "10px", fontWeight: 700, width: "18px", height: "18px", display: "flex", alignItems: "center", justifyContent: "center" }}>{cartCount}</span>
+              {/* Admin link */}
+              {mounted && userName && isAdmin && (
+                <Link
+                  href="/admin"
+                  className="hidden lg:flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-orange-700 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors"
+                >
+                  <LayoutDashboard size={16} />
+                  Admin
+                </Link>
+              )}
+
+              {/* User Dropdown */}
+              <div ref={userDropdownRef} className="relative hidden sm:block">
+                <button
+                  onClick={() => {
+                    if (mounted && userName) setUserDropdownOpen(!userDropdownOpen);
+                    else router.push("/account/login");
+                  }}
+                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-lg transition-colors"
+                >
+                  <User size={18} />
+                  <span className="hidden lg:inline">
+                    {mounted && userName ? userName.split(" ")[0] : "Sign In"}
+                  </span>
+                  {mounted && userName && <ChevronDown size={14} className={`transition-transform ${userDropdownOpen ? "rotate-180" : ""}`} />}
+                </button>
+
+                {userDropdownOpen && mounted && userName && (
+                  <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden z-50">
+                    <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
+                      <p className="text-sm font-medium text-gray-900">{userName}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">Manage your account</p>
+                    </div>
+                    {isAdmin && (
+                      <Link href="/admin" onClick={() => setUserDropdownOpen(false)} className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                        <LayoutDashboard size={16} className="text-gray-400" />
+                        Admin Dashboard
+                      </Link>
+                    )}
+                    <Link href="/account/dashboard" onClick={() => setUserDropdownOpen(false)} className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                      <User size={16} className="text-gray-400" />
+                      My Account
+                    </Link>
+                    <div className="border-t border-gray-100">
+                      <button onClick={handleLogout} className="flex items-center gap-3 w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                        <LogOut size={16} />
+                        Sign Out
+                      </button>
+                    </div>
+                  </div>
                 )}
-              </span>
-              <span className="c9hdr-cart-label">Cart</span>
-            </Link>
+              </div>
 
-
+              {/* Cart */}
+              <Link
+                href="/cart"
+                className={`relative flex items-center gap-1.5 p-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors ${cartBounce ? "cart-bounce" : ""}`}
+                aria-label="Shopping cart"
+              >
+                <ShoppingCart size={20} />
+                {mounted && cartCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 bg-blue-600 text-white text-[10px] font-bold min-w-[18px] h-[18px] flex items-center justify-center rounded-full shadow-sm">
+                    {cartCount > 99 ? "99+" : cartCount}
+                  </span>
+                )}
+                <span className="hidden lg:inline text-sm font-medium">Cart</span>
+              </Link>
+            </div>
           </div>
         </div>
 
-        {/* Mobile search bar (below nav row) */}
+        {/* Mobile Search Bar */}
         {mobileSearchOpen && (
-          <div style={{ padding: "0 12px 10px", position: "relative" }}>
-            <div style={{ display: "flex", background: "#fff", borderRadius: "2px" }}>
+          <div className="md:hidden border-t border-gray-100 px-4 py-3 bg-gray-50">
+            <form onSubmit={handleSearchSubmit} className="relative">
               <input
                 type="text"
                 value={search}
-                onChange={e => setSearch(e.target.value)}
+                onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search products..."
                 autoFocus
-                style={{ flex: 1, border: "none", outline: "none", padding: "9px 12px", fontSize: "14px" }}
+                className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
                 autoComplete="off"
               />
-              {search && (
-                <button onClick={() => setSearch("")} style={{ background: "none", border: "none", padding: "0 10px", cursor: "pointer", color: "#888" }}>
-                  <X size={16} />
-                </button>
-              )}
-            </div>
-            <SearchDropdown onClose={() => setMobileSearchOpen(false)} />
+              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+            </form>
+            {searchResults.length > 0 && (
+              <div className="mt-2 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden max-h-64 overflow-y-auto">
+                {searchResults.map((product) => (
+                  <Link
+                    key={product._id}
+                    href={`/product/${product.slug || product._id}`}
+                    onClick={() => { setSearch(""); setMobileSearchOpen(false); }}
+                    className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 border-b border-gray-50 last:border-0"
+                  >
+                    <span className="text-sm text-gray-700 truncate flex-1">{product.name}</span>
+                    <span className="text-sm font-bold text-gray-900 shrink-0">₹{product.price?.toLocaleString("en-IN")}</span>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </header>
@@ -413,3 +415,22 @@ export default function Header() {
   );
 }
 
+function DrawerLink({ href, icon: Icon, label, badge, onClick }) {
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      className="flex items-center justify-between px-5 py-3.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+    >
+      <span className="flex items-center gap-3">
+        <Icon size={18} className="text-gray-400" />
+        {label}
+      </span>
+      {badge > 0 && (
+        <span className="bg-blue-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+          {badge}
+        </span>
+      )}
+    </Link>
+  );
+}

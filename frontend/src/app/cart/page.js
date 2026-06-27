@@ -1,6 +1,8 @@
 "use client";
 import React from "react";
-import { useCart } from "../../context/CartContext";
+import Link from "next/link";
+import { useCart } from "@/context/CartContext";
+import { ShoppingCart, Minus, Plus, Trash2, ArrowRight } from "lucide-react";
 
 export default function CartPage() {
   const { cart, updateQuantity, removeFromCart, clearCart } = useCart();
@@ -16,118 +18,153 @@ export default function CartPage() {
 
   if (cart.length === 0) {
     return (
-      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '64px 16px', textAlign: 'center' }}>
-        <div style={{ fontSize: '72px', marginBottom: '16px' }}>🛒</div>
-        <h2 style={{ fontSize: '20px', fontWeight: 600, marginBottom: '8px', color: '#212121' }}>Your cart is empty!</h2>
-        <p style={{ color: '#878787', marginBottom: '24px' }}>Add items to it now.</p>
-        <a href="/" style={{ background: '#2874f0', color: '#fff', borderRadius: '2px', padding: '12px 40px', textDecoration: 'none', fontWeight: 600, fontSize: '15px' }}>
-          Shop Now
-        </a>
+      <div className="min-h-[60vh] flex flex-col items-center justify-center px-4 py-16 text-center">
+        <ShoppingCart size={64} className="text-gray-300 mb-4" />
+        <h2 className="text-xl font-bold text-gray-800 mb-2">Your cart is empty</h2>
+        <p className="text-sm text-gray-500 mb-6">Looks like you haven&apos;t added anything yet.</p>
+        <Link
+          href="/shop"
+          className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors"
+        >
+          Start Shopping <ArrowRight size={16} />
+        </Link>
       </div>
     );
   }
 
   return (
-    <div style={{ background: '#f1f3f6', minHeight: '100vh', padding: '16px 0' }}>
-      <style>{`
-        .c9-cart-layout { display: flex; gap: 16px; align-items: flex-start; }
-        .c9-cart-summary { width: 360px; min-width: 300px; position: sticky; top: 80px; }
-        @media (max-width: 768px) {
-          .c9-cart-layout { flex-direction: column; }
-          .c9-cart-summary { width: 100% !important; min-width: unset !important; position: static !important; }
-        }
-      `}</style>
-      <div className="c9-cart-layout" style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 16px' }}>
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Shopping Cart ({cart.length})</h1>
+        <button
+          onClick={clearCart}
+          className="text-sm text-red-500 hover:text-red-600 font-medium transition-colors"
+        >
+          Clear All
+        </button>
+      </div>
 
-        {/* Left: Cart Items */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ background: '#fff', borderRadius: '2px', padding: '14px 20px', marginBottom: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h1 style={{ fontSize: '18px', fontWeight: 600, color: '#212121', margin: 0 }}>My Cart ({cart.length})</h1>
-            <button onClick={clearCart} style={{ color: '#2874f0', background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>Clear Cart</button>
-          </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Cart Items */}
+        <div className="lg:col-span-2 space-y-3">
+          {cart.map(({ product, quantity }) => {
+            const imgSrc = product.images?.[0]?.startsWith("http")
+              ? product.images[0]
+              : product.image || "/logo.svg";
+            const discount = product.originalPrice
+              ? Math.round((1 - product.price / product.originalPrice) * 100)
+              : null;
 
-          {cart.map(({ product, quantity }) => (
-            <div key={product._id} style={{ background: '#fff', borderRadius: '2px', padding: '16px 20px', marginBottom: '4px', display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-              <img
-                src={
-                  product.images && Array.isArray(product.images) && product.images.length > 0 && product.images[0].startsWith('http')
-                    ? product.images[0]
-                    : product.image || "/no-image.png"
-                }
-                alt={product.name}
-                style={{ width: '96px', height: '96px', objectFit: 'contain', border: '1px solid #f0f0f0', borderRadius: '2px', padding: '4px', flexShrink: 0 }}
-              />
-              <div style={{ flex: 1 }}>
-                <a href={`/product/${product.slug || product._id}`} style={{ fontSize: '15px', color: '#212121', marginBottom: '4px', display: 'block', textDecoration: 'none', fontWeight: 500 }}
-                  onMouseEnter={e => e.currentTarget.style.color = '#2874f0'}
-                  onMouseLeave={e => e.currentTarget.style.color = '#212121'}
-                >{product.name}</a>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: '17px', fontWeight: 600, color: '#212121' }}>₹{(product.price * quantity).toLocaleString('en-IN')}</span>
-                  {product.originalPrice && <span style={{ fontSize: '13px', color: '#878787', textDecoration: 'line-through' }}>₹{(product.originalPrice * quantity).toLocaleString('en-IN')}</span>}
-                  {product.originalPrice && <span style={{ fontSize: '13px', color: '#388e3c', fontWeight: 600 }}>{Math.round((1 - product.price / product.originalPrice) * 100)}% off</span>}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #c2c2c2', borderRadius: '2px' }}>
-                    <button
-                      onClick={() => quantity > 1 ? updateQuantity(product._id, quantity - 1) : removeFromCart(product._id)}
-                      style={{ width: '32px', height: '32px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', fontWeight: 600, color: '#2874f0' }}
-                    >−</button>
-                    <span style={{ padding: '0 14px', fontSize: '14px', fontWeight: 600, borderLeft: '1px solid #c2c2c2', borderRight: '1px solid #c2c2c2', height: '32px', display: 'flex', alignItems: 'center' }}>{quantity}</span>
-                    <button
-                      onClick={() => updateQuantity(product._id, quantity + 1)}
-                      style={{ width: '32px', height: '32px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', fontWeight: 600, color: '#2874f0' }}
-                    >+</button>
+            return (
+              <div key={product._id} className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 flex gap-4">
+                {/* Image */}
+                <Link href={`/product/${product.slug || product._id}`} className="shrink-0">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gray-50 rounded-lg border border-gray-100 flex items-center justify-center p-2">
+                    <img src={imgSrc} alt={product.name} className="max-h-full max-w-full object-contain" />
                   </div>
-                  <button
-                    onClick={() => removeFromCart(product._id)}
-                    style={{ color: '#878787', background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 500 }}
-                  >REMOVE</button>
+                </Link>
+
+                {/* Details */}
+                <div className="flex-1 min-w-0">
+                  <Link href={`/product/${product.slug || product._id}`} className="block">
+                    <h3 className="text-sm font-medium text-gray-800 line-clamp-2 hover:text-blue-600 transition-colors">
+                      {product.name}
+                    </h3>
+                  </Link>
+
+                  <div className="mt-2 flex items-baseline gap-2 flex-wrap">
+                    <span className="text-lg font-bold text-gray-900">
+                      ₹{(product.price * quantity).toLocaleString("en-IN")}
+                    </span>
+                    {product.originalPrice && (
+                      <span className="text-xs text-gray-400 line-through">
+                        ₹{(product.originalPrice * quantity).toLocaleString("en-IN")}
+                      </span>
+                    )}
+                    {discount > 0 && (
+                      <span className="text-xs text-green-600 font-semibold">{discount}% off</span>
+                    )}
+                  </div>
+
+                  {/* Quantity + Remove */}
+                  <div className="mt-3 flex items-center gap-4">
+                    <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
+                      <button
+                        onClick={() => quantity > 1 ? updateQuantity(product._id, quantity - 1) : removeFromCart(product._id)}
+                        className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-50 transition-colors"
+                      >
+                        <Minus size={14} />
+                      </button>
+                      <span className="w-10 h-8 flex items-center justify-center text-sm font-semibold border-x border-gray-200">
+                        {quantity}
+                      </span>
+                      <button
+                        onClick={() => updateQuantity(product._id, quantity + 1)}
+                        className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-50 transition-colors"
+                      >
+                        <Plus size={14} />
+                      </button>
+                    </div>
+                    <button
+                      onClick={() => removeFromCart(product._id)}
+                      className="text-gray-400 hover:text-red-500 transition-colors"
+                      aria-label="Remove item"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
-        {/* Right: Price Details */}
-        <div className="c9-cart-summary">
-          <div style={{ background: '#fff', borderRadius: '2px', padding: '16px 20px' }}>
-            <h2 style={{ fontSize: '13px', fontWeight: 600, color: '#878787', borderBottom: '1px solid #e0e0e0', paddingBottom: '14px', marginBottom: '14px', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 14px' }}>Price Details</h2>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '15px' }}>
-              <span>Price ({cart.length} {cart.length > 1 ? 'items' : 'item'})</span>
-              <span>₹{subtotal.toLocaleString('en-IN')}</span>
-            </div>
-            {savings > 0 && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '15px' }}>
-                <span>Discount</span>
-                <span style={{ color: '#388e3c' }}>− ₹{savings.toLocaleString('en-IN')}</span>
+        {/* Order Summary */}
+        <div className="lg:col-span-1">
+          <div className="bg-white rounded-xl border border-gray-200 p-5 sticky top-24">
+            <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider pb-4 border-b border-gray-100">
+              Order Summary
+            </h2>
+
+            <div className="mt-4 space-y-3 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Subtotal ({cart.length} items)</span>
+                <span className="font-medium text-gray-900">₹{subtotal.toLocaleString("en-IN")}</span>
               </div>
-            )}
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '15px' }}>
-              <span>Delivery Charges</span>
-              {deliveryCharge === 0
-                ? <span style={{ color: '#388e3c' }}>FREE</span>
-                : <span>₹{deliveryCharge}</span>
-              }
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '14px', paddingTop: '14px', borderTop: '1px dashed #e0e0e0', fontWeight: 700, fontSize: '16px' }}>
-              <span>Total Amount</span>
-              <span>₹{total.toLocaleString('en-IN')}</span>
-            </div>
-            {savings > 0 && (
-              <div style={{ marginTop: '12px', fontSize: '13px', color: '#388e3c', fontWeight: 600 }}>
-                You will save ₹{savings.toLocaleString('en-IN')} on this order
+              {savings > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Discount</span>
+                  <span className="font-medium text-green-600">− ₹{savings.toLocaleString("en-IN")}</span>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <span className="text-gray-600">Delivery</span>
+                <span className={`font-medium ${deliveryCharge === 0 ? "text-green-600" : "text-gray-900"}`}>
+                  {deliveryCharge === 0 ? "FREE" : `₹${deliveryCharge}`}
+                </span>
               </div>
+            </div>
+
+            <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between items-baseline">
+              <span className="text-base font-bold text-gray-900">Total</span>
+              <span className="text-xl font-bold text-gray-900">₹{total.toLocaleString("en-IN")}</span>
+            </div>
+
+            {savings > 0 && (
+              <p className="mt-3 text-xs text-green-600 font-medium">
+                You save ₹{savings.toLocaleString("en-IN")} on this order
+              </p>
             )}
+
+            <Link
+              href="/checkout"
+              className="mt-5 w-full flex items-center justify-center gap-2 py-3.5 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors text-sm"
+            >
+              Proceed to Checkout <ArrowRight size={16} />
+            </Link>
           </div>
-          <a href="/checkout" style={{ display: 'block', marginTop: '12px', textDecoration: 'none' }}>
-            <button style={{ width: '100%', background: '#fb641b', color: '#fff', border: 'none', borderRadius: '2px', padding: '14px', fontSize: '15px', fontWeight: 600, cursor: 'pointer', letterSpacing: '0.5px' }}>
-              PLACE ORDER
-            </button>
-          </a>
         </div>
       </div>
     </div>
   );
 }
-

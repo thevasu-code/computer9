@@ -1,32 +1,31 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Search, Shield, UserCheck, Edit, Trash2, X, Check } from "lucide-react";
 
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
   const [editId, setEditId] = useState(null);
   const [editForm, setEditForm] = useState({ name: "", email: "", phone: "", isAdmin: false });
   const router = useRouter();
 
-  const handleEditInput = (e) => {
-    const { name, value, type, checked } = e.target;
-    setEditForm({ ...editForm, [name]: type === "checkbox" ? checked : value });
-  };
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) { router.push("/account/login"); return; }
+    fetch("/api/admin/users", { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.json())
+      .then((data) => { if (Array.isArray(data)) setUsers(data); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, [router]);
 
   const handleEdit = (user) => {
     setEditId(user._id);
-    setEditForm({
-      name: user.name,
-      email: user.email,
-      phone: user.phone || "",
-      isAdmin: user.isAdmin,
-    });
+    setEditForm({ name: user.name, email: user.email, phone: user.phone || "", isAdmin: user.isAdmin });
   };
 
-  const handleUpdate = async (e) => {
-    e.preventDefault();
+  const handleUpdate = async () => {
     const token = localStorage.getItem("token");
     try {
       const res = await fetch(`/api/admin/users/${editId}`, {
@@ -35,126 +34,109 @@ export default function AdminUsers() {
         body: JSON.stringify(editForm),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Update failed");
-      setUsers(users.map(u => u._id === editId ? data : u));
+      if (res.ok) setUsers(users.map((u) => (u._id === editId ? data : u)));
       setEditId(null);
-    } catch (err) {
-      alert(err.message);
-    }
+    } catch { /* ignore */ }
   };
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      router.push("/account/login");
-      return;
-    }
-    fetch("/api/admin/users", { headers: { Authorization: `Bearer ${token}` } })
-      .then(res => res.json())
-      .then(data => {
-        if (!Array.isArray(data)) {
-          setError(data.error || "Failed to load users.");
-        } else {
-          setUsers(data);
-        }
-        setLoading(false);
-      })
-      .catch(() => {
-        setError("Failed to load users.");
-        setLoading(false);
-      });
-  }, [router]);
 
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this user?")) return;
     const token = localStorage.getItem("token");
-    try {
-      const res = await fetch(`/api/admin/users/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error("Delete failed");
-      setUsers(users.filter(u => u._id !== id));
-    } catch (err) {
-      alert(err.message);
-    }
+    const res = await fetch(`/api/admin/users/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+    if (res.ok) setUsers(users.filter((u) => u._id !== id));
   };
 
-  if (loading) return <div className="text-center py-12">Loading...</div>;
-  if (error) return <div className="text-center py-12 text-red-500">{error}</div>;
+  const filtered = users.filter((u) => {
+    const q = search.toLowerCase();
+    return !q || u.name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q);
+  });
 
-  const adminUsers = users.filter((u) => u.isAdmin);
-  const regularUsers = users.filter((u) => !u.isAdmin);
+  const admins = filtered.filter((u) => u.isAdmin);
+  const regular = filtered.filter((u) => !u.isAdmin);
 
-  const renderUsersTable = (list) => (
-    <table className="w-full border-collapse bg-white rounded shadow">
-      <thead>
-        <tr className="border-b">
-          <th className="p-2 text-left">Name</th>
-          <th className="p-2 text-center">Email</th>
-          <th className="p-2 text-center">Phone</th>
-          <th className="p-2 text-center">Admin</th>
-          <th className="p-2 text-center">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {list.map((u) => (
-          <tr key={u._id} className="border-b">
-            {editId === u._id ? (
-              <>
-                <td className="p-2"><input name="name" value={editForm.name} onChange={handleEditInput} className="border rounded px-2 w-full" /></td>
-                <td className="p-2 text-center"><input name="email" value={editForm.email} onChange={handleEditInput} className="border rounded px-2 w-full text-center" /></td>
-                <td className="p-2 text-center"><input name="phone" value={editForm.phone} onChange={handleEditInput} className="border rounded px-2 w-full text-center" placeholder="Phone" /></td>
-                <td className="p-2 text-center">
-                  <input name="isAdmin" type="checkbox" checked={editForm.isAdmin} onChange={handleEditInput} /> Admin
-                </td>
-                <td className="p-2 text-center">
-                  <button className="bg-primary text-white px-3 py-1 rounded mr-2" onClick={handleUpdate}>Save</button>
-                  <button className="text-zinc-500 hover:underline" onClick={() => setEditId(null)}>Cancel</button>
-                </td>
-              </>
-            ) : (
-              <>
-                <td className="p-2">{u.name}</td>
-                <td className="p-2 text-center">{u.email}</td>
-                <td className="p-2 text-center">{u.phone || "-"}</td>
-                <td className="p-2 text-center">{u.isAdmin ? "Yes" : "No"}</td>
-                <td className="p-2 text-center">
-                  <button className="text-primary hover:underline mr-2" onClick={() => handleEdit(u)}>Edit</button>
-                  <button className="text-red-500 hover:underline" onClick={() => handleDelete(u._id)}>Delete</button>
-                </td>
-              </>
-            )}
-          </tr>
-        ))}
-        {list.length === 0 && (
-          <tr>
-            <td className="p-4 text-center text-zinc-500" colSpan={5}>No users found</td>
-          </tr>
-        )}
-      </tbody>
-    </table>
-  );
+  if (loading) return <div className="p-8 text-center text-gray-400">Loading users...</div>;
 
   return (
-    <div className="max-w-5xl mx-auto py-12 px-4">
-      <h1 className="text-3xl font-bold mb-8 text-center">Manage Users</h1>
+    <div className="p-6 lg:p-8">
+      <div className="flex items-center justify-between gap-4 mb-6">
+        <h1 className="text-xl font-bold text-gray-900">Users</h1>
+        <span className="text-sm text-gray-400">{users.length} total</span>
+      </div>
 
-      <section className="mb-8">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-xl font-semibold">Admin Users</h2>
-          <span className="text-sm text-zinc-500">{adminUsers.length} total</span>
-        </div>
-        {renderUsersTable(adminUsers)}
-      </section>
+      {/* Search */}
+      <div className="relative max-w-xs mb-6">
+        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search users..."
+          className="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+        />
+      </div>
 
-      <section>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-xl font-semibold">Regular Users</h2>
-          <span className="text-sm text-zinc-500">{regularUsers.length} total</span>
+      {/* Admin Users */}
+      {admins.length > 0 && (
+        <div className="mb-6">
+          <h2 className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-3">
+            <Shield size={14} className="text-orange-500" />
+            Admins ({admins.length})
+          </h2>
+          <UserTable users={admins} editId={editId} editForm={editForm} setEditForm={setEditForm} onEdit={handleEdit} onUpdate={handleUpdate} onCancel={() => setEditId(null)} onDelete={handleDelete} />
         </div>
-        {renderUsersTable(regularUsers)}
-      </section>
+      )}
+
+      {/* Regular Users */}
+      <div>
+        <h2 className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-3">
+          <UserCheck size={14} className="text-blue-500" />
+          Customers ({regular.length})
+        </h2>
+        <UserTable users={regular} editId={editId} editForm={editForm} setEditForm={setEditForm} onEdit={handleEdit} onUpdate={handleUpdate} onCancel={() => setEditId(null)} onDelete={handleDelete} />
+      </div>
+    </div>
+  );
+}
+
+function UserTable({ users, editId, editForm, setEditForm, onEdit, onUpdate, onCancel, onDelete }) {
+  if (users.length === 0) return <div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-400 text-sm">No users found.</div>;
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="hidden sm:grid grid-cols-[1.5fr_2fr_1fr_0.6fr_80px] gap-2 px-5 py-3 bg-gray-50 border-b border-gray-100 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+        <span>Name</span><span>Email</span><span>Phone</span><span>Role</span><span>Actions</span>
+      </div>
+      {users.map((u) => (
+        <div key={u._id} className="grid grid-cols-1 sm:grid-cols-[1.5fr_2fr_1fr_0.6fr_80px] gap-2 px-5 py-3 items-center border-b border-gray-50 last:border-0">
+          {editId === u._id ? (
+            <>
+              <input value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} className="px-2 py-1.5 border border-gray-200 rounded-lg text-sm" />
+              <input value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} className="px-2 py-1.5 border border-gray-200 rounded-lg text-sm" />
+              <input value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} className="px-2 py-1.5 border border-gray-200 rounded-lg text-sm" />
+              <label className="flex items-center gap-1.5 text-xs">
+                <input type="checkbox" checked={editForm.isAdmin} onChange={(e) => setEditForm({ ...editForm, isAdmin: e.target.checked })} className="w-3.5 h-3.5" />
+                Admin
+              </label>
+              <div className="flex items-center gap-1">
+                <button onClick={onUpdate} className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg"><Check size={15} /></button>
+                <button onClick={onCancel} className="p-1.5 text-gray-400 hover:bg-gray-50 rounded-lg"><X size={15} /></button>
+              </div>
+            </>
+          ) : (
+            <>
+              <span className="text-sm font-medium text-gray-800 truncate">{u.name}</span>
+              <span className="text-sm text-gray-500 truncate">{u.email}</span>
+              <span className="text-sm text-gray-500">{u.phone || "—"}</span>
+              <span className={`text-[10px] font-bold uppercase ${u.isAdmin ? "text-orange-600" : "text-gray-400"}`}>
+                {u.isAdmin ? "Admin" : "User"}
+              </span>
+              <div className="flex items-center gap-1">
+                <button onClick={() => onEdit(u)} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"><Edit size={14} /></button>
+                <button onClick={() => onDelete(u._id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"><Trash2 size={14} /></button>
+              </div>
+            </>
+          )}
+        </div>
+      ))}
     </div>
   );
 }

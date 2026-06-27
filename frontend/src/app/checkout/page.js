@@ -1,9 +1,21 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { useCart } from "../../context/CartContext";
+import Link from "next/link";
+import { useCart } from "@/context/CartContext";
 import { useRouter } from "next/navigation";
+import { Shield, CreditCard, AlertCircle } from "lucide-react";
 
 export default function CheckoutPage() {
+  const { cart, clearCart } = useCart();
+  const [billing, setBilling] = useState({ name: "", email: "", address: "", phone: "", pincode: "" });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [billingEditMode, setBillingEditMode] = useState(true);
+  const [saveToAccount, setSaveToAccount] = useState(true);
+  const [loggedIn, setLoggedIn] = useState(false);
+  const router = useRouter();
+  const total = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+
   useEffect(() => {
     if (!window.Razorpay) {
       const script = document.createElement("script");
@@ -12,21 +24,10 @@ export default function CheckoutPage() {
       document.body.appendChild(script);
     }
   }, []);
-  const { cart, clearCart } = useCart();
-  const [billing, setBilling] = useState({ name: "", email: "", address: "", phone: "", pincode: "" });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [billingEditMode, setBillingEditMode] = useState(true);
-  const [saveToAccount, setSaveToAccount] = useState(true);
-  const [billingNotice, setBillingNotice] = useState("");
-  const router = useRouter();
-  const total = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
-  const [loggedIn, setLoggedIn] = useState(false);
 
   useEffect(() => {
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
     setLoggedIn(!!token);
-
     if (token) {
       fetch("/api/users/me", { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" })
         .then((res) => res.json())
@@ -35,42 +36,27 @@ export default function CheckoutPage() {
           const saved = {
             name: data.name || "",
             email: data.email || "",
-            phone: data.phone || data.phoneNumber || data.mobile || "",
-            address: data.billingAddress?.address || data.address || "",
-            pincode: data.billingAddress?.pincode || data.pin || data.pincode || "",
+            phone: data.phone || "",
+            address: data.billingAddress?.address || "",
+            pincode: data.billingAddress?.pincode || "",
           };
           setBilling((prev) => ({ ...prev, ...saved }));
-
-          const hasSavedBilling = Boolean(saved.phone || saved.address || saved.pincode);
-          setBillingEditMode(!hasSavedBilling);
-          if (hasSavedBilling) {
-            setBillingNotice("Using your saved billing details. Click Edit to change.");
-          }
+          const hasSaved = Boolean(saved.phone || saved.address || saved.pincode);
+          setBillingEditMode(!hasSaved);
         })
         .catch(() => {});
     }
   }, []);
 
-  const handleInput = (e) => {
-    setBilling({ ...billing, [e.target.name]: e.target.value });
-  };
+  const handleInput = (e) => setBilling({ ...billing, [e.target.name]: e.target.value });
 
   const saveBillingProfile = async () => {
     const token = localStorage.getItem("token");
     if (!token) return;
     await fetch("/api/users/me", {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        phone: billing.phone,
-        billingAddress: {
-          address: billing.address,
-          pincode: billing.pincode,
-        },
-      }),
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ phone: billing.phone, billingAddress: { address: billing.address, pincode: billing.pincode } }),
     });
   };
 
@@ -78,21 +64,16 @@ export default function CheckoutPage() {
     setLoading(true);
     setError("");
     try {
-      if (loggedIn && saveToAccount) {
-        await saveBillingProfile();
-      }
+      if (loggedIn && saveToAccount) await saveBillingProfile();
 
       const res = await fetch("/api/razorpay", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amount: total,
-          billing,
-          cart,
-        }),
+        body: JSON.stringify({ amount: total, billing, cart }),
       });
       const data = await res.json();
       if (!data.order) throw new Error(data.error || "Payment error");
+
       const options = {
         key: data.key,
         amount: data.order.amount,
@@ -101,41 +82,26 @@ export default function CheckoutPage() {
         description: "Order Payment",
         order_id: data.order.id,
         handler: async function (response) {
-          // Save order to DB
           try {
             const token = localStorage.getItem("token");
             await fetch("/api/orders", {
               method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                ...(token ? { Authorization: `Bearer ${token}` } : {}),
-              },
+              headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
               body: JSON.stringify({
-                items: cart.map(item => ({
-                  product: item.product._id,
-                  quantity: item.quantity,
-                  price: item.product.price,
-                })),
+                items: cart.map((item) => ({ product: item.product._id, quantity: item.quantity, price: item.product.price })),
                 total,
                 billing,
                 razorpayOrderId: response.razorpay_order_id,
                 razorpayPaymentId: response.razorpay_payment_id,
               }),
             });
-          } catch {}
+          } catch { /* ignore */ }
           clearCart();
           router.push("/account/dashboard?order=success");
         },
-        prefill: {
-          name: billing.name,
-          email: billing.email,
-          contact: billing.phone,
-        },
-        notes: {
-          address: billing.address,
-          pincode: billing.pincode,
-        },
-        theme: { color: "#6366f1" },
+        prefill: { name: billing.name, email: billing.email, contact: billing.phone },
+        notes: { address: billing.address, pincode: billing.pincode },
+        theme: { color: "#2563eb" },
       };
       const rzp = new window.Razorpay(options);
       rzp.open();
@@ -146,153 +112,137 @@ export default function CheckoutPage() {
     }
   };
 
+  const isFormComplete = billing.name && billing.email && billing.phone && billing.address && billing.pincode;
+
   return (
-    <div className="max-w-2xl mx-auto py-12 px-4">
-      <h1 className="text-3xl font-bold mb-8 text-center">Checkout</h1>
-      {/* Enhanced Order Summary Card View */}
-      <div className="mb-10">
-        <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
-        {cart.length === 0 ? (
-          <div className="text-gray-500">Your cart is empty.</div>
-        ) : (
-          <div className="space-y-4">
-            {cart.map((item, idx) => (
-              <div key={idx} className="flex items-center bg-gradient-to-r from-gray-100 to-gray-200 shadow-lg rounded-xl p-4 border border-gray-300">
-                <div className="w-20 h-20 flex items-center justify-center bg-white rounded-lg border mr-4">
-                  <img
-                    src={item.product.images?.[0]?.startsWith('http') ? item.product.images[0] : "/placeholder.png"}
-                    alt={item.product.title}
-                    className="w-16 h-16 object-cover rounded"
-                  />
-                </div>
-                <div className="flex-1">
-                  <div className="font-bold text-lg mb-1">{item.product.title}</div>
-                  <div className="text-gray-600 mb-1">Quantity: <span className="font-medium">{item.quantity}</span></div>
-                  <div className="text-gray-800 font-semibold">₹{item.product.price} x {item.quantity} <span className="ml-2">= ₹{item.product.price * item.quantity}</span></div>
-                </div>
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+      <h1 className="text-2xl font-bold text-gray-900 mb-8">Checkout</h1>
+
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+        {/* Left: Billing */}
+        <div className="lg:col-span-3">
+          {!loggedIn && (
+            <div className="mb-6 flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+              <AlertCircle size={20} className="text-amber-500 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-amber-800">Guest checkout</p>
+                <p className="text-xs text-amber-600 mt-0.5">
+                  <Link href="/account/login" className="underline font-semibold">Sign in</Link> for a faster experience with saved details.
+                </p>
               </div>
-            ))}
+            </div>
+          )}
+
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 className="text-base font-bold text-gray-900 mb-5">Billing Details</h2>
+
+            {loggedIn && !billingEditMode ? (
+              <div className="space-y-2 text-sm">
+                <div><span className="text-gray-500 w-20 inline-block">Name:</span> {billing.name}</div>
+                <div><span className="text-gray-500 w-20 inline-block">Email:</span> {billing.email}</div>
+                <div><span className="text-gray-500 w-20 inline-block">Phone:</span> {billing.phone || "—"}</div>
+                <div><span className="text-gray-500 w-20 inline-block">Address:</span> {billing.address || "—"}</div>
+                <div><span className="text-gray-500 w-20 inline-block">Pincode:</span> {billing.pincode || "—"}</div>
+                <button
+                  onClick={() => setBillingEditMode(true)}
+                  className="mt-3 text-sm text-blue-600 font-semibold hover:text-blue-700"
+                >
+                  Edit Details
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">Full Name</label>
+                  <input name="name" value={billing.name} onChange={handleInput} required
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-all" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">Email</label>
+                  <input name="email" type="email" value={billing.email} onChange={handleInput} required
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-all" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">Phone</label>
+                  <input name="phone" type="tel" value={billing.phone} onChange={handleInput} required
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-all" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">Address</label>
+                  <textarea name="address" value={billing.address} onChange={handleInput} rows={3} required
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-all resize-none" />
+                </div>
+                <div className="max-w-[200px]">
+                  <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">Pincode</label>
+                  <input name="pincode" value={billing.pincode} onChange={handleInput} required
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-all" />
+                </div>
+
+                {loggedIn && (
+                  <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+                    <input type="checkbox" checked={saveToAccount} onChange={(e) => setSaveToAccount(e.target.checked)} className="w-4 h-4 text-blue-600 rounded" />
+                    Save to my account for faster checkout
+                  </label>
+                )}
+              </div>
+            )}
           </div>
-        )}
-      </div>
-      {/* Billing Form */}
-      {!loggedIn && (
-        <div className="mb-8 p-4 bg-orange-100 border-l-4 border-orange-500 rounded">
-          <div className="mb-2 text-orange-700 font-semibold">You must login or fill billing details to proceed.</div>
-          <a href="/account" className="text-primary underline font-medium">Login</a>
         </div>
-      )}
-      <form className="space-y-4 mb-8" onSubmit={e => e.preventDefault()}>
-        {billingNotice && (
-          <div className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-3 py-2">
-            {billingNotice}
-          </div>
-        )}
 
-        {loggedIn && !billingEditMode ? (
-          <div className="border rounded p-4 bg-gray-50 space-y-2">
-            <div><span className="text-gray-500">Name:</span> {billing.name}</div>
-            <div><span className="text-gray-500">Email:</span> {billing.email}</div>
-            <div><span className="text-gray-500">Phone:</span> {billing.phone || "Not set"}</div>
-            <div><span className="text-gray-500">Address:</span> {billing.address || "Not set"}</div>
-            <div><span className="text-gray-500">Pincode:</span> {billing.pincode || "Not set"}</div>
+        {/* Right: Summary */}
+        <div className="lg:col-span-2">
+          <div className="bg-white rounded-xl border border-gray-200 p-5 sticky top-24">
+            <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider pb-4 border-b border-gray-100">
+              Order Summary
+            </h2>
+
+            <div className="mt-4 space-y-3 max-h-60 overflow-y-auto">
+              {cart.map((item) => (
+                <div key={item.product._id} className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-gray-50 rounded-lg border border-gray-100 flex items-center justify-center p-1 shrink-0">
+                    <img
+                      src={item.product.images?.[0]?.startsWith("http") ? item.product.images[0] : "/logo.svg"}
+                      alt="" className="max-h-full max-w-full object-contain"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-gray-700 truncate">{item.product.name}</p>
+                    <p className="text-xs text-gray-400">Qty: {item.quantity}</p>
+                  </div>
+                  <span className="text-sm font-semibold text-gray-900 shrink-0">
+                    ₹{(item.product.price * item.quantity).toLocaleString("en-IN")}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between items-baseline">
+              <span className="text-base font-bold text-gray-900">Total</span>
+              <span className="text-xl font-bold text-gray-900">₹{total.toLocaleString("en-IN")}</span>
+            </div>
+
+            {error && (
+              <div className="mt-4 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+                {error}
+              </div>
+            )}
+
             <button
-              type="button"
-              onClick={() => { setBillingEditMode(true); setBillingNotice(""); }}
-              className="mt-2 border border-primary text-primary rounded px-3 py-1.5 text-sm font-medium"
+              onClick={handleRazorpay}
+              disabled={loading || !isFormComplete || cart.length === 0}
+              className="mt-5 w-full flex items-center justify-center gap-2 py-3.5 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed text-sm"
             >
-              Edit Billing Details
+              <CreditCard size={16} />
+              {loading ? "Processing..." : "Pay with Razorpay"}
             </button>
+
+            <div className="mt-4 flex items-center justify-center gap-1.5 text-xs text-gray-400">
+              <Shield size={12} />
+              Secure payment powered by Razorpay
+            </div>
           </div>
-        ) : (
-          <>
-            <input
-              type="text"
-              name="name"
-              placeholder="Full Name"
-              value={billing.name}
-              onChange={handleInput}
-              className="w-full border rounded px-3 py-2"
-              required
-            />
-            <input
-              type="email"
-              name="email"
-              placeholder="Email"
-              value={billing.email}
-              onChange={handleInput}
-              className="w-full border rounded px-3 py-2"
-              required
-            />
-            <input
-              type="tel"
-              name="phone"
-              placeholder="Phone Number"
-              value={billing.phone}
-              onChange={handleInput}
-              className="w-full border rounded px-3 py-2"
-              required
-            />
-            <textarea
-              name="address"
-              placeholder="Billing Address"
-              value={billing.address}
-              onChange={handleInput}
-              className="w-full border rounded px-3 py-2"
-              required
-            />
-            <input
-              type="text"
-              name="pincode"
-              placeholder="Pin Code"
-              value={billing.pincode}
-              onChange={handleInput}
-              className="w-full border rounded px-3 py-2"
-              required
-            />
-
-            {loggedIn && (
-              <label className="flex items-center gap-2 text-sm text-gray-700">
-                <input
-                  type="checkbox"
-                  checked={saveToAccount}
-                  onChange={(e) => setSaveToAccount(e.target.checked)}
-                />
-                Save these billing details to my account
-              </label>
-            )}
-
-            {loggedIn && (
-              <button
-                type="button"
-                onClick={() => {
-                  setBillingEditMode(false);
-                  setBillingNotice("Updated billing details will be used for this payment.");
-                }}
-                className="border border-gray-300 rounded px-3 py-1.5 text-sm font-medium"
-              >
-                Done Editing
-              </button>
-            )}
-          </>
-        )}
-      </form>
-      <div className="mb-6 text-xl font-bold text-right">Total: ₹{total}</div>
-      {error && <div className="text-red-500 mb-4">{error}</div>}
-      <button
-        className="w-full bg-primary text-white py-3 rounded font-medium text-lg hover:bg-primary/90 transition-colors disabled:opacity-60"
-        onClick={handleRazorpay}
-        disabled={
-          loading ||
-          !billing.name ||
-          !billing.email ||
-          !billing.phone ||
-          !billing.address ||
-          !billing.pincode
-        }
-      >
-        {loading ? "Processing..." : "Pay with Razorpay"}
-      </button>
+        </div>
+      </div>
     </div>
   );
 }

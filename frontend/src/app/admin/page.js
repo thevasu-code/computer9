@@ -1,7 +1,8 @@
-
 "use client";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Package, Users, ShoppingBag, BarChart3, FolderOpen, Database, Download, Upload, Settings, Newspaper } from "lucide-react";
 
 export default function AdminDashboard() {
   const [products, setProducts] = useState([]);
@@ -19,194 +20,162 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) {
-      router.push("/account/login");
-      return;
-    }
-    // Check expiry
-    const payload = (() => {
-      try {
-        return JSON.parse(atob(token.split(".")[1]));
-      } catch {
-        return null;
-      }
-    })();
-    if (!payload || payload.exp < Math.floor(Date.now() / 1000)) {
-      localStorage.removeItem("token");
-      router.push("/account/login");
-      return;
-    }
-    Promise.all([
-      fetch("/api/products", {
-        headers: { Authorization: `Bearer ${token}` },
-      }).then(res => res.json()),
-      fetch("/api/admin/users", {
-        headers: { Authorization: `Bearer ${token}` },
-      }).then(res => res.json()),
-      fetch("/api/admin/orders", {
-        headers: { Authorization: `Bearer ${token}` },
-      }).then(res => res.json()),
-    ]).then(([products, users, orders]) => {
-      setProducts(products);
-      setUsers(users);
-      setOrders(orders);
-      setLoading(false);
-    }).catch(err => {
-      setError("Session expired or unauthorized.");
-      localStorage.removeItem("token");
-      router.push("/account/login");
-    });
-  }, [router]);
+    if (!token) { router.push("/account/login"); return; }
+    const payload = (() => { try { return JSON.parse(atob(token.split(".")[1])); } catch { return null; } })();
+    if (!payload || payload.exp < Math.floor(Date.now() / 1000)) { localStorage.removeItem("token"); router.push("/account/login"); return; }
 
-  if (loading) return <div className="text-center py-12">Loading...</div>;
-  if (error) return <div className="text-center py-12 text-red-500">{error}</div>;
+    Promise.all([
+      fetch("/api/products", { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()),
+      fetch("/api/admin/users", { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()),
+      fetch("/api/admin/orders", { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()),
+    ])
+      .then(([p, u, o]) => { setProducts(p); setUsers(u); setOrders(o); setLoading(false); })
+      .catch(() => { setError("Unauthorized"); localStorage.removeItem("token"); router.push("/account/login"); });
+  }, [router]);
 
   const downloadBackup = async () => {
     const token = getToken();
-    if (!token) {
-      router.push("/account/login");
-      return;
-    }
-    setBackupMessage("");
-    setBackupLoading(true);
+    if (!token) { router.push("/account/login"); return; }
+    setBackupMessage(""); setBackupLoading(true);
     try {
-      const res = await fetch("/api/admin/backup", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || "Backup failed");
-      }
+      const res = await fetch("/api/admin/backup", { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) throw new Error("Backup failed");
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = url;
-      a.download = `computer9-backup-${Date.now()}.json`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-      setBackupMessage("Backup downloaded successfully.");
-    } catch (err) {
-      setBackupMessage(err.message || "Backup failed.");
-    } finally {
-      setBackupLoading(false);
-    }
+      a.href = url; a.download = `computer9-backup-${Date.now()}.json`;
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      setBackupMessage("Backup downloaded.");
+    } catch (err) { setBackupMessage(err.message); } finally { setBackupLoading(false); }
   };
 
   const restoreBackup = async () => {
     const token = getToken();
-    if (!token) {
-      router.push("/account/login");
-      return;
-    }
-    if (!backupFile) {
-      setBackupMessage("Please choose a backup JSON file first.");
-      return;
-    }
-
-    const confirmRestore = window.confirm(
-      "This will replace current database collections with backup data. Continue?"
-    );
-    if (!confirmRestore) return;
-
-    setBackupMessage("");
-    setRestoreLoading(true);
+    if (!token || !backupFile) return;
+    if (!window.confirm("This will replace current data. Continue?")) return;
+    setBackupMessage(""); setRestoreLoading(true);
     try {
       const raw = await backupFile.text();
       const payload = JSON.parse(raw);
-      const res = await fetch("/api/admin/backup", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
+      const res = await fetch("/api/admin/backup", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify(payload) });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Restore failed");
-
-      setBackupMessage(
-        `Restore complete: Users ${data.restored?.users || 0}, Products ${data.restored?.products || 0}, Orders ${data.restored?.orders || 0}, Carts ${data.restored?.carts || 0}, Reviews ${data.restored?.reviews || 0}`
-      );
+      setBackupMessage(`Restored: ${data.restored?.products || 0} products, ${data.restored?.users || 0} users, ${data.restored?.orders || 0} orders`);
       setBackupFile(null);
-      window.location.reload();
-    } catch (err) {
-      setBackupMessage(err.message || "Restore failed.");
-    } finally {
-      setRestoreLoading(false);
-    }
+    } catch (err) { setBackupMessage(err.message); } finally { setRestoreLoading(false); }
+  };
+
+  if (loading) return <div className="text-center py-20 text-gray-500">Loading dashboard...</div>;
+  if (error) return <div className="text-center py-20 text-red-500">{error}</div>;
+
+  const totalRevenue = orders.reduce((sum, o) => sum + (o.total || 0), 0);
+
+  const cards = [
+    { title: "Products", value: Array.isArray(products) ? products.length : 0, icon: Package, href: "/admin/products", color: "blue" },
+    { title: "Categories", value: "Manage", icon: FolderOpen, href: "/admin/categories", color: "purple" },
+    { title: "Users", value: Array.isArray(users) ? users.length : 0, icon: Users, href: "/admin/users", color: "green" },
+    { title: "Orders", value: Array.isArray(orders) ? orders.length : 0, icon: ShoppingBag, href: "/admin/orders", color: "orange" },
+    { title: "Analytics", value: "View", icon: BarChart3, href: "/admin/analytics", color: "indigo" },
+    { title: "Newsletter", value: "Manage", icon: Newspaper, href: "/admin/newsletter", color: "pink" },
+    { title: "Settings", value: "Configure", icon: Settings, href: "/admin/settings", color: "gray" },
+  ];
+
+  const colorMap = {
+    blue: "bg-blue-50 text-blue-600 border-blue-100",
+    purple: "bg-purple-50 text-purple-600 border-purple-100",
+    green: "bg-green-50 text-green-600 border-green-100",
+    orange: "bg-orange-50 text-orange-600 border-orange-100",
+    indigo: "bg-indigo-50 text-indigo-600 border-indigo-100",
+    pink: "bg-pink-50 text-pink-600 border-pink-100",
+    gray: "bg-gray-50 text-gray-600 border-gray-100",
   };
 
   return (
-    <div className="max-w-7xl mx-auto py-12 px-4">
-      <h1 className="text-4xl font-bold mb-8 text-center">Admin Dashboard</h1>
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
-        <div className="bg-white rounded shadow p-6">
-          <h2 className="text-2xl font-bold mb-4">Products</h2>
-          <div className="text-lg mb-2">Total: {products.length}</div>
-          <a href="/admin/products" className="text-primary underline">Manage Products</a>
+    <div className="p-6 lg:p-8">
+      <div className="mb-8">
+        <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
+        <p className="text-sm text-gray-500 mt-1">Overview of your store</p>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <p className="text-xs text-gray-400 uppercase tracking-wide">Products</p>
+          <p className="text-2xl font-bold text-gray-900 mt-1">{Array.isArray(products) ? products.length : 0}</p>
         </div>
-        <div className="bg-white rounded shadow p-6">
-          <h2 className="text-2xl font-bold mb-4">Categories</h2>
-          <div className="text-lg mb-2">Organize Products</div>
-          <a href="/admin/categories" className="text-primary underline">Manage Categories</a>
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <p className="text-xs text-gray-400 uppercase tracking-wide">Users</p>
+          <p className="text-2xl font-bold text-gray-900 mt-1">{Array.isArray(users) ? users.length : 0}</p>
         </div>
-        <div className="bg-white rounded shadow p-6">
-          <h2 className="text-2xl font-bold mb-4">Users</h2>
-          <div className="text-lg mb-2">Total: {users.length}</div>
-          <a href="/admin/users" className="text-primary underline">Manage Users</a>
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <p className="text-xs text-gray-400 uppercase tracking-wide">Orders</p>
+          <p className="text-2xl font-bold text-gray-900 mt-1">{Array.isArray(orders) ? orders.length : 0}</p>
         </div>
-        <div className="bg-white rounded shadow p-6">
-          <h2 className="text-2xl font-bold mb-4">Orders</h2>
-          <div className="text-lg mb-2">Total: {orders.length}</div>
-          <a href="/admin/orders" className="text-primary underline">Manage Orders</a>
-        </div>
-        <div className="bg-white rounded shadow p-6">
-          <h2 className="text-2xl font-bold mb-4">Analytics</h2>
-          <div className="text-lg mb-2">Sales, Trends, Top Products</div>
-          <a href="/admin/analytics" className="text-primary underline">View Analytics</a>
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <p className="text-xs text-gray-400 uppercase tracking-wide">Revenue</p>
+          <p className="text-2xl font-bold text-gray-900 mt-1">₹{totalRevenue.toLocaleString("en-IN")}</p>
         </div>
       </div>
 
-      <div className="bg-white rounded shadow p-6">
-        <h2 className="text-2xl font-bold mb-2">Database Backup</h2>
-        <p className="text-sm text-zinc-600 mb-4">
-          Download full MongoDB data (including product image URLs/content fields) and restore it later on this website.
-        </p>
+      {/* Navigation Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+        {cards.map((card) => (
+          <Link
+            key={card.title}
+            href={card.href}
+            className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md hover:border-gray-300 transition-all group"
+          >
+            <div className="flex items-center gap-4">
+              <div className={`w-11 h-11 rounded-lg flex items-center justify-center border ${colorMap[card.color]}`}>
+                <card.icon size={20} />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{card.title}</h3>
+                <p className="text-xs text-gray-400 mt-0.5">{typeof card.value === "number" ? `${card.value} total` : card.value}</p>
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
 
-        <div className="flex flex-wrap gap-3 items-center mb-4">
+      {/* Backup Section */}
+      <div className="bg-white rounded-xl border border-gray-200 p-5">
+        <div className="flex items-center gap-3 mb-4">
+          <Database size={18} className="text-gray-400" />
+          <h2 className="text-base font-bold text-gray-900">Database Backup</h2>
+        </div>
+        <p className="text-xs text-gray-500 mb-4">Download full database or restore from a previous backup file.</p>
+
+        <div className="flex flex-wrap gap-3 items-center">
           <button
-            type="button"
-            className="bg-primary text-white px-4 py-2 rounded font-medium disabled:opacity-60"
             onClick={downloadBackup}
             disabled={backupLoading || restoreLoading}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-60"
           >
-            {backupLoading ? "Preparing Backup..." : "Download Backup"}
+            <Download size={14} />
+            {backupLoading ? "Preparing..." : "Download Backup"}
           </button>
 
-          <input
-            type="file"
-            accept="application/json"
-            onChange={(e) => setBackupFile(e.target.files?.[0] || null)}
-            className="border rounded px-3 py-2 text-sm"
-          />
-
-          <button
-            type="button"
-            className="bg-emerald-600 text-white px-4 py-2 rounded font-medium disabled:opacity-60"
-            onClick={restoreBackup}
-            disabled={restoreLoading || backupLoading}
-          >
-            {restoreLoading ? "Restoring..." : "Restore Backup"}
-          </button>
+          <div className="flex items-center gap-2">
+            <input
+              type="file"
+              accept="application/json"
+              onChange={(e) => setBackupFile(e.target.files?.[0] || null)}
+              className="text-sm text-gray-500 file:mr-2 file:px-3 file:py-2 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
+            />
+            <button
+              onClick={restoreBackup}
+              disabled={restoreLoading || backupLoading || !backupFile}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:opacity-60"
+            >
+              <Upload size={14} />
+              {restoreLoading ? "Restoring..." : "Restore"}
+            </button>
+          </div>
         </div>
 
-        {backupFile && (
-          <p className="text-xs text-zinc-500 mb-2">Selected file: {backupFile.name}</p>
-        )}
         {backupMessage && (
-          <p className={`text-sm ${backupMessage.toLowerCase().includes("failed") || backupMessage.toLowerCase().includes("error") ? "text-red-600" : "text-emerald-700"}`}>
+          <p className={`mt-3 text-sm ${backupMessage.includes("fail") || backupMessage.includes("error") ? "text-red-600" : "text-green-600"}`}>
             {backupMessage}
           </p>
         )}

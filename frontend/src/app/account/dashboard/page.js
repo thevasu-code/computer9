@@ -2,18 +2,20 @@
 import React, { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { Package, MapPin, Trash2, CheckCircle, Edit2, ShoppingBag, Heart, TrendingUp } from "lucide-react";
+import AccountSidebar from "@/components/AccountSidebar";
 
-const STATUS_COLORS = {
-  pending:    { bg: '#fff8e1', color: '#f57f17', label: 'Pending' },
-  confirmed:  { bg: '#e3f2fd', color: '#1565c0', label: 'Confirmed' },
-  shipped:    { bg: '#e8f5e9', color: '#2e7d32', label: 'Shipped' },
-  delivered:  { bg: '#e8f5e9', color: '#1b5e20', label: 'Delivered' },
-  cancelled:  { bg: '#ffebee', color: '#c62828', label: 'Cancelled' },
+const STATUS_STYLES = {
+  pending: "bg-amber-50 text-amber-700 border-amber-200",
+  confirmed: "bg-blue-50 text-blue-700 border-blue-200",
+  shipped: "bg-indigo-50 text-indigo-700 border-indigo-200",
+  delivered: "bg-green-50 text-green-700 border-green-200",
+  cancelled: "bg-red-50 text-red-700 border-red-200",
 };
 
 export default function AccountDashboard() {
   return (
-    <Suspense fallback={<div className="text-center py-12">Loading...</div>}>
+    <Suspense fallback={<div className="text-center py-12 text-gray-500">Loading...</div>}>
       <DashboardContent />
     </Suspense>
   );
@@ -36,311 +38,248 @@ function DashboardContent() {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) {
-      router.push("/account/login");
-      return;
-    }
-    // Fetch user profile
+    if (!token) { router.push("/account/login"); return; }
+
     fetch("/api/users/me", { headers: { Authorization: `Bearer ${token}` } })
-      .then(res => res.json())
-      .then(data => {
-        if (!data || data.error) {
-          localStorage.removeItem("token");
-          router.push("/account/login");
-        } else {
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data || data.error) { localStorage.removeItem("token"); router.push("/account/login"); }
+        else {
           setUser(data);
-          setBillingForm({
-            phone: data.phone || "",
-            address: data.billingAddress?.address || "",
-            pincode: data.billingAddress?.pincode || "",
-          });
+          setBillingForm({ phone: data.phone || "", address: data.billingAddress?.address || "", pincode: data.billingAddress?.pincode || "" });
           setLoading(false);
         }
       });
-    // Fetch order history
+
     fetch("/api/orders", { headers: { Authorization: `Bearer ${token}` } })
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) setOrders(data);
-        setOrdersLoading(false);
-      })
+      .then((res) => res.json())
+      .then((data) => { if (Array.isArray(data)) setOrders(data); setOrdersLoading(false); })
       .catch(() => setOrdersLoading(false));
   }, [router]);
-
-  const handleBillingChange = (e) => {
-    const { name, value } = e.target;
-    setBillingForm((prev) => ({ ...prev, [name]: value }));
-  };
 
   const handleBillingSave = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem("token");
-    if (!token) {
-      router.push("/account/login");
-      return;
-    }
-
+    if (!token) return;
     setSavingBilling(true);
     setBillingMessage("");
     try {
       const res = await fetch("/api/users/me", {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          phone: billingForm.phone,
-          billingAddress: {
-            address: billingForm.address,
-            pincode: billingForm.pincode,
-          },
-        }),
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ phone: billingForm.phone, billingAddress: { address: billingForm.address, pincode: billingForm.pincode } }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to update billing details");
+      if (!res.ok) throw new Error(data.error || "Failed to update");
       setUser(data);
-      setBillingForm({
-        phone: data.phone || "",
-        address: data.billingAddress?.address || "",
-        pincode: data.billingAddress?.pincode || "",
-      });
+      setBillingForm({ phone: data.phone || "", address: data.billingAddress?.address || "", pincode: data.billingAddress?.pincode || "" });
       setBillingEditOpen(false);
-      setBillingMessage("Billing details updated successfully.");
+      setBillingMessage("Saved successfully.");
     } catch (err) {
-      setBillingMessage(err.message || "Failed to update billing details.");
+      setBillingMessage(err.message);
     } finally {
       setSavingBilling(false);
     }
   };
 
   const handleDeleteAccount = async () => {
-    const confirmation = window.prompt('Type DELETE to confirm account deletion');
-    if (confirmation !== 'DELETE') return;
-
+    if (window.prompt("Type DELETE to confirm") !== "DELETE") return;
     const token = localStorage.getItem("token");
-    if (!token) {
-      router.push("/account/login");
-      return;
-    }
-
+    if (!token) return;
     setDeletingAccount(true);
     setDeleteError("");
     try {
-      const res = await fetch("/api/users/me", {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to delete account");
+      const res = await fetch("/api/users/me", { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) throw new Error("Failed to delete");
       localStorage.removeItem("token");
-      localStorage.removeItem("adminToken");
       window.dispatchEvent(new Event("storage"));
       router.replace("/");
     } catch (err) {
-      setDeleteError(err.message || "Failed to delete account.");
+      setDeleteError(err.message);
     } finally {
       setDeletingAccount(false);
     }
   };
 
-  if (loading) return <div className="text-center py-12">Loading...</div>;
-  if (!user) return <div className="text-center py-12">User not found.</div>;
+  if (loading) return <div className="text-center py-20 text-gray-500">Loading...</div>;
+  if (!user) return <div className="text-center py-20 text-gray-500">User not found.</div>;
+
+  const totalSpent = orders.reduce((sum, o) => sum + (o.total || 0), 0);
+  const deliveredCount = orders.filter((o) => o.status === "delivered").length;
 
   return (
-    <div className="max-w-2xl mx-auto py-12 px-4">
-      <h1 className="text-3xl font-bold mb-8 text-center">Account Dashboard</h1>
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* Sidebar */}
+        <AccountSidebar user={user} />
 
-      {orderSuccess && (
-        <div style={{ background: '#e8f5e9', border: '1px solid #a5d6a7', borderRadius: '4px', padding: '16px 20px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ fontSize: '24px' }}>✅</span>
-          <div>
-            <div style={{ fontWeight: 600, color: '#2e7d32', fontSize: '16px' }}>Order placed successfully!</div>
-            <div style={{ color: '#388e3c', fontSize: '13px', marginTop: '2px' }}>Thank you for your purchase. Your order is being processed.</div>
-          </div>
-        </div>
-      )}
-
-      {/* Profile card */}
-      <div style={{ background: '#fff', borderRadius: '4px', padding: '20px 24px', marginBottom: '16px', boxShadow: '0 1px 4px rgba(0,0,0,0.08)', display: 'flex', alignItems: 'center', gap: '20px' }}>
-        <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#2874f0', color: '#fff', fontSize: '24px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          {user.name?.[0]?.toUpperCase() || 'U'}
-        </div>
-        <div>
-          <div style={{ fontSize: '18px', fontWeight: 600, color: '#212121' }}>{user.name}</div>
-          <div style={{ fontSize: '13px', color: '#878787', marginTop: '2px' }}>{user.email}</div>
-        </div>
-      </div>
-
-      {/* Billing details */}
-      <div style={{ background: '#fff', borderRadius: '4px', padding: '20px 24px', marginBottom: '16px', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '10px' }}>
-          <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#212121' }}>Billing Details</h2>
-          {!billingEditOpen ? (
-            <button
-              onClick={() => setBillingEditOpen(true)}
-              style={{ border: '1px solid #2874f0', color: '#2874f0', background: '#fff', borderRadius: '4px', padding: '6px 12px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
-            >
-              Edit
-            </button>
-          ) : null}
-        </div>
-
-        {billingEditOpen ? (
-          <form onSubmit={handleBillingSave} style={{ display: 'grid', gap: '10px' }}>
-            <input
-              name="phone"
-              placeholder="Phone number"
-              value={billingForm.phone}
-              onChange={handleBillingChange}
-              style={{ border: '1px solid #ddd', borderRadius: '4px', padding: '10px 12px', fontSize: '14px' }}
-            />
-            <input
-              name="address"
-              placeholder="Billing address"
-              value={billingForm.address}
-              onChange={handleBillingChange}
-              style={{ border: '1px solid #ddd', borderRadius: '4px', padding: '10px 12px', fontSize: '14px' }}
-            />
-            <input
-              name="pincode"
-              placeholder="Pincode"
-              value={billingForm.pincode}
-              onChange={handleBillingChange}
-              style={{ border: '1px solid #ddd', borderRadius: '4px', padding: '10px 12px', fontSize: '14px', maxWidth: '220px' }}
-            />
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '4px' }}>
-              <button
-                type="submit"
-                disabled={savingBilling}
-                style={{ background: '#2874f0', color: '#fff', border: 'none', borderRadius: '4px', padding: '8px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
-              >
-                {savingBilling ? 'Saving...' : 'Save Billing Details'}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setBillingEditOpen(false);
-                  setBillingForm({
-                    phone: user.phone || "",
-                    address: user.billingAddress?.address || "",
-                    pincode: user.billingAddress?.pincode || "",
-                  });
-                  setBillingMessage("");
-                }}
-                style={{ border: '1px solid #bbb', color: '#555', background: '#fff', borderRadius: '4px', padding: '8px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
-              >
-                Cancel
-              </button>
+        {/* Main Content */}
+        <div className="flex-1 min-w-0 space-y-6">
+          {orderSuccess && (
+            <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-xl">
+              <CheckCircle size={20} className="text-green-500 shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-green-700">Order placed successfully!</p>
+                <p className="text-xs text-green-600 mt-0.5">Thank you for your purchase.</p>
+              </div>
             </div>
-          </form>
-        ) : (
-          <div style={{ display: 'grid', gap: '6px', color: '#444', fontSize: '14px' }}>
-            <div><span style={{ color: '#878787' }}>Phone:</span> {user.phone || 'Not set'}</div>
-            <div><span style={{ color: '#878787' }}>Address:</span> {user.billingAddress?.address || 'Not set'}</div>
-            <div><span style={{ color: '#878787' }}>Pincode:</span> {user.billingAddress?.pincode || 'Not set'}</div>
-            <Link href="/checkout" style={{ color: '#2874f0', fontSize: '13px', textDecoration: 'none', marginTop: '4px' }}>Use these details at checkout</Link>
-          </div>
-        )}
+          )}
 
-        {billingMessage && (
-          <div style={{ marginTop: '10px', color: billingMessage.includes('successfully') ? '#2e7d32' : '#c62828', fontSize: '13px' }}>
-            {billingMessage}
+          {/* Quick Stats */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="bg-white rounded-xl border border-gray-200 p-4">
+              <ShoppingBag size={18} className="text-blue-500 mb-2" />
+              <p className="text-[10px] text-gray-400 uppercase tracking-wider">Total Orders</p>
+              <p className="text-xl font-bold text-gray-900 mt-0.5">{orders.length}</p>
+            </div>
+            <div className="bg-white rounded-xl border border-gray-200 p-4">
+              <Package size={18} className="text-green-500 mb-2" />
+              <p className="text-[10px] text-gray-400 uppercase tracking-wider">Delivered</p>
+              <p className="text-xl font-bold text-gray-900 mt-0.5">{deliveredCount}</p>
+            </div>
+            <div className="bg-white rounded-xl border border-gray-200 p-4">
+              <TrendingUp size={18} className="text-purple-500 mb-2" />
+              <p className="text-[10px] text-gray-400 uppercase tracking-wider">Total Spent</p>
+              <p className="text-xl font-bold text-gray-900 mt-0.5">₹{totalSpent.toLocaleString("en-IN")}</p>
+            </div>
+            <div className="bg-white rounded-xl border border-gray-200 p-4">
+              <Heart size={18} className="text-red-400 mb-2" />
+              <p className="text-[10px] text-gray-400 uppercase tracking-wider">Wishlist</p>
+              <p className="text-xl font-bold text-gray-900 mt-0.5">{user.wishlist?.length || 0}</p>
+            </div>
           </div>
-        )}
-      </div>
 
-      {/* Orders section */}
-      <div style={{ background: '#fff', borderRadius: '4px', padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>
-        <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#212121', marginBottom: '16px', borderBottom: '2px solid #2874f0', paddingBottom: '10px' }}>My Orders</h2>
-        {ordersLoading ? (
-          <div style={{ color: '#878787', padding: '20px 0', textAlign: 'center' }}>Loading orders...</div>
-        ) : orders.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '32px 0', color: '#878787' }}>
-            <div style={{ fontSize: '40px', marginBottom: '10px' }}>📦</div>
-            <div style={{ fontSize: '15px', fontWeight: 500 }}>No orders yet</div>
-            <a href="/" style={{ color: '#2874f0', fontSize: '13px', textDecoration: 'none', marginTop: '8px', display: 'inline-block' }}>Start Shopping</a>
+          {/* Billing Details */}
+          <div id="billing" className="bg-white rounded-xl border border-gray-200 p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                <MapPin size={16} className="text-gray-400" />
+                Billing & Shipping Address
+              </h2>
+              {!billingEditOpen && (
+                <button onClick={() => setBillingEditOpen(true)} className="text-xs text-blue-600 font-medium hover:text-blue-700 flex items-center gap-1">
+                  <Edit2 size={12} /> Edit
+                </button>
+              )}
+            </div>
+
+            {billingEditOpen ? (
+              <form onSubmit={handleBillingSave} className="space-y-3">
+                <input placeholder="Phone" value={billingForm.phone} onChange={(e) => setBillingForm({ ...billingForm, phone: e.target.value })}
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white" />
+                <input placeholder="Address" value={billingForm.address} onChange={(e) => setBillingForm({ ...billingForm, address: e.target.value })}
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white" />
+                <input placeholder="Pincode" value={billingForm.pincode} onChange={(e) => setBillingForm({ ...billingForm, pincode: e.target.value })}
+                  className="w-full max-w-[200px] px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white" />
+                <div className="flex gap-2 pt-1">
+                  <button type="submit" disabled={savingBilling} className="px-4 py-2 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 disabled:opacity-60">
+                    {savingBilling ? "Saving..." : "Save Address"}
+                  </button>
+                  <button type="button" onClick={() => { setBillingEditOpen(false); setBillingMessage(""); }}
+                    className="px-4 py-2 border border-gray-200 text-gray-600 text-xs font-medium rounded-lg hover:bg-gray-50">
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="space-y-1.5 text-sm text-gray-700">
+                <p><span className="text-gray-400 w-16 inline-block">Phone:</span> {user.phone || "Not set"}</p>
+                <p><span className="text-gray-400 w-16 inline-block">Address:</span> {user.billingAddress?.address || "Not set"}</p>
+                <p><span className="text-gray-400 w-16 inline-block">Pincode:</span> {user.billingAddress?.pincode || "Not set"}</p>
+              </div>
+            )}
+            {billingMessage && (
+              <p className={`mt-3 text-xs font-medium ${billingMessage.includes("success") ? "text-green-600" : "text-red-600"}`}>
+                {billingMessage}
+              </p>
+            )}
           </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {orders.map(order => {
-              const statusInfo = STATUS_COLORS[order.status] || STATUS_COLORS.pending;
-              return (
-                <div key={order._id} style={{ border: '1px solid #f0f0f0', borderRadius: '4px', padding: '14px 16px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px', marginBottom: '10px' }}>
-                    <div>
-                      <div style={{ fontSize: '12px', color: '#878787' }}>Order ID</div>
-                      <div style={{ fontSize: '13px', fontWeight: 600, color: '#212121', fontFamily: 'monospace' }}>{order._id?.slice(-10).toUpperCase()}</div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <span style={{ background: statusInfo.bg, color: statusInfo.color, borderRadius: '12px', padding: '3px 12px', fontSize: '12px', fontWeight: 600 }}>
-                        {statusInfo.label}
-                      </span>
-                      <div style={{ fontSize: '11px', color: '#aaa', marginTop: '4px' }}>
-                        {new Date(order.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+
+          {/* Orders */}
+          <div id="orders" className="bg-white rounded-xl border border-gray-200 p-5">
+            <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2 mb-5">
+              <Package size={16} className="text-gray-400" />
+              Recent Orders
+            </h2>
+
+            {ordersLoading ? (
+              <p className="text-center py-8 text-gray-400 text-sm">Loading orders...</p>
+            ) : orders.length === 0 ? (
+              <div className="text-center py-10">
+                <Package size={40} className="mx-auto text-gray-200 mb-3" />
+                <p className="text-sm font-medium text-gray-500">No orders yet</p>
+                <Link href="/shop" className="text-sm text-blue-600 font-medium mt-2 inline-block hover:text-blue-700">
+                  Start Shopping →
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {orders.slice(0, 10).map((order) => {
+                  const statusClass = STATUS_STYLES[order.status] || STATUS_STYLES.pending;
+                  return (
+                    <div key={order._id} className="border border-gray-100 rounded-xl p-4 hover:border-gray-200 transition-colors">
+                      <div className="flex items-start justify-between flex-wrap gap-2 mb-3">
+                        <div>
+                          <p className="text-[10px] text-gray-400 uppercase tracking-wide">Order ID</p>
+                          <p className="text-xs font-mono font-semibold text-gray-700">{order._id?.slice(-10).toUpperCase()}</p>
+                        </div>
+                        <div className="text-right">
+                          <span className={`inline-block text-[10px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full border ${statusClass}`}>
+                            {order.status}
+                          </span>
+                          <p className="text-[10px] text-gray-400 mt-1">
+                            {new Date(order.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 mb-3">
+                        {order.products?.slice(0, 3).map((p, i) => (
+                          <div key={i} className="flex items-center gap-3">
+                            <div className="w-9 h-9 bg-gray-50 border border-gray-100 rounded flex items-center justify-center shrink-0">
+                              {p.image ? <img src={p.image} alt="" className="max-h-full max-w-full object-contain" /> : <Package size={14} className="text-gray-300" />}
+                            </div>
+                            <p className="text-xs text-gray-600 truncate flex-1">{p.title || "Product"}</p>
+                            <span className="text-xs font-semibold text-gray-800 shrink-0">
+                              ₹{((p.price || 0) * (p.quantity || 1)).toLocaleString("en-IN")}
+                            </span>
+                          </div>
+                        ))}
+                        {(order.products?.length || 0) > 3 && (
+                          <p className="text-[10px] text-gray-400 pl-12">+{order.products.length - 3} more items</p>
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-between pt-3 border-t border-gray-50">
+                        <span className="text-[10px] text-gray-400 truncate max-w-[50%]">{order.address}</span>
+                        <span className="text-sm font-bold text-gray-900">₹{order.total?.toLocaleString("en-IN")}</span>
                       </div>
                     </div>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '10px' }}>
-                    {order.products?.map((p, i) => {
-                      const productId = typeof p.product === 'object' ? p.product?._id : p.product;
-                      const name = p.title || p.product?.name || 'Product';
-                      const img = p.image || p.product?.images?.[0] || null;
-                      return (
-                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: '#fafafa', borderRadius: '4px', padding: '8px 10px', border: '1px solid #f0f0f0' }}>
-                          <div style={{ width: 44, height: 44, flexShrink: 0, border: '1px solid #eee', borderRadius: '4px', overflow: 'hidden', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            {img ? (
-                              <img src={img} alt={name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                            ) : (
-                              <span style={{ fontSize: '18px' }}>📦</span>
-                            )}
-                          </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            {productId ? (
-                              <a href={`/product/${productId}`}
-                                style={{ fontSize: '13px', fontWeight: 600, color: '#2874f0', textDecoration: 'none', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                                onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
-                                onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
-                              >
-                                {name}
-                              </a>
-                            ) : (
-                              <span style={{ fontSize: '13px', fontWeight: 600, color: '#212121', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
-                            )}
-                            <div style={{ fontSize: '12px', color: '#878787', marginTop: '2px' }}>Qty: {p.quantity || 1} × ₹{(p.price || 0).toLocaleString('en-IN')}</div>
-                          </div>
-                          <div style={{ fontWeight: 700, fontSize: '13px', color: '#212121', flexShrink: 0 }}>
-                            ₹{((p.price || 0) * (p.quantity || 1)).toLocaleString('en-IN')}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px dashed #f0f0f0', paddingTop: '8px' }}>
-                    <span style={{ fontSize: '12px', color: '#878787' }}>Delivered to: {order.address}</span>
-                    <span style={{ fontWeight: 700, fontSize: '15px', color: '#212121' }}>₹{order.total?.toLocaleString('en-IN')}</span>
-                  </div>
-                </div>
-              );
-            })}
+                  );
+                })}
+              </div>
+            )}
           </div>
-        )}
-      </div>
 
-      {/* Danger zone */}
-      <div style={{ background: '#fff', borderRadius: '4px', padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,0.08)', borderTop: '4px solid #d32f2f', marginTop: '16px' }}>
-        <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#b71c1c', marginBottom: '8px' }}>Danger Zone</h2>
-        <p style={{ color: '#666', fontSize: '13px', marginBottom: '12px' }}>
-          Deleting your account will remove your profile and cart data. This action cannot be undone.
-        </p>
-        <button
-          onClick={handleDeleteAccount}
-          disabled={deletingAccount}
-          style={{ background: '#d32f2f', color: '#fff', border: 'none', borderRadius: '4px', padding: '10px 14px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
-        >
-          {deletingAccount ? 'Deleting Account...' : 'Delete Account'}
-        </button>
-        {deleteError && <div style={{ marginTop: '10px', color: '#c62828', fontSize: '13px' }}>{deleteError}</div>}
+          {/* Account Settings / Danger Zone */}
+          <div className="bg-white rounded-xl border border-red-100 p-5">
+            <h2 className="text-sm font-bold text-red-700 flex items-center gap-2 mb-2">
+              <Trash2 size={14} />
+              Delete Account
+            </h2>
+            <p className="text-xs text-gray-500 mb-3">
+              This permanently deletes your account, order history, and all data.
+            </p>
+            <button
+              onClick={handleDeleteAccount}
+              disabled={deletingAccount}
+              className="px-4 py-2 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 disabled:opacity-60"
+            >
+              {deletingAccount ? "Deleting..." : "Delete Account"}
+            </button>
+            {deleteError && <p className="mt-2 text-xs text-red-600">{deleteError}</p>}
+          </div>
+        </div>
       </div>
     </div>
   );

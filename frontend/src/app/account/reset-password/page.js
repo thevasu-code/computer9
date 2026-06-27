@@ -1,6 +1,8 @@
 "use client";
 import React, { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { Lock, CheckCircle, AlertCircle } from "lucide-react";
 
 function ResetPasswordForm() {
   const [password, setPassword] = useState("");
@@ -14,10 +16,22 @@ function ResetPasswordForm() {
 
   if (!token) {
     return (
-      <div style={{ textAlign: 'center', padding: '40px 24px' }}>
-        <div style={{ fontSize: '48px', marginBottom: '12px' }}>❌</div>
-        <p style={{ color: '#c62828', fontWeight: 600 }}>Invalid or missing reset token.</p>
-        <a href="/account/forgot-password" style={{ color: '#2874f0', fontSize: '14px', fontWeight: 600, textDecoration: 'none' }}>Request a new reset link</a>
+      <div className="text-center py-6">
+        <AlertCircle size={48} className="mx-auto text-red-400 mb-4" />
+        <p className="text-sm font-medium text-red-700 mb-4">Invalid or missing reset token.</p>
+        <Link href="/account/forgot-password" className="text-sm text-blue-600 font-semibold hover:text-blue-700">
+          Request a new reset link
+        </Link>
+      </div>
+    );
+  }
+
+  if (success) {
+    return (
+      <div className="text-center py-6">
+        <CheckCircle size={48} className="mx-auto text-green-500 mb-4" />
+        <p className="text-sm font-medium text-green-700 mb-2">Password reset successfully!</p>
+        <p className="text-xs text-gray-500">Redirecting to sign in...</p>
       </div>
     );
   }
@@ -45,83 +59,83 @@ function ResetPasswordForm() {
     }
   };
 
-  if (success) {
-    return (
-      <div style={{ textAlign: 'center', padding: '40px 24px' }}>
-        <div style={{ fontSize: '48px', marginBottom: '12px' }}>✅</div>
-        <p style={{ color: '#2e7d32', fontWeight: 600, fontSize: '15px', marginBottom: '6px' }}>Password reset successfully!</p>
-        <p style={{ color: '#878787', fontSize: '13px' }}>Redirecting to login...</p>
-      </div>
-    );
-  }
-
   return (
-    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <form onSubmit={handleSubmit} className="space-y-5">
       <div>
-        <p style={{ color: '#212121', fontSize: '15px', fontWeight: 600, marginBottom: '4px' }}>Set a new password</p>
-        <p style={{ color: '#878787', fontSize: '13px' }}>Choose a strong password of at least 6 characters.</p>
+        <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1.5">New Password</label>
+        <div className="relative">
+          <Lock size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            id="password"
+            type="password"
+            placeholder="Min. 6 characters"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-all"
+          />
+        </div>
       </div>
-      <input
-        type="password"
-        placeholder="New Password"
-        value={password}
-        onChange={e => setPassword(e.target.value)}
-        required
-        style={{ border: 'none', borderBottom: '2px solid #e0e0e0', outline: 'none', padding: '10px 0', fontSize: '15px', width: '100%' }}
-        onFocus={e => e.target.style.borderBottomColor = '#2874f0'}
-        onBlur={e => e.target.style.borderBottomColor = '#e0e0e0'}
-      />
-      <input
-        type="password"
-        placeholder="Confirm New Password"
-        value={confirm}
-        onChange={e => setConfirm(e.target.value)}
-        required
-        style={{ border: 'none', borderBottom: '2px solid #e0e0e0', outline: 'none', padding: '10px 0', fontSize: '15px', width: '100%' }}
-        onFocus={e => e.target.style.borderBottomColor = '#2874f0'}
-        onBlur={e => e.target.style.borderBottomColor = '#e0e0e0'}
-      />
-      {error && <div style={{ color: '#ff4444', fontSize: '13px' }}>{error}</div>}
+
+      <div>
+        <label htmlFor="confirm" className="block text-sm font-medium text-gray-700 mb-1.5">Confirm Password</label>
+        <div className="relative">
+          <Lock size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            id="confirm"
+            type="password"
+            placeholder="Re-enter password"
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+            required
+            className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-all"
+          />
+        </div>
+      </div>
+
+      {error && (
+        <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-4 py-2.5">
+          {error}
+        </div>
+      )}
+
       <button
         type="submit"
         disabled={loading}
-        style={{ background: '#fb641b', color: '#fff', border: 'none', borderRadius: '2px', padding: '14px', fontSize: '15px', fontWeight: 600, cursor: 'pointer', letterSpacing: '0.5px' }}
+        className="w-full py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 focus:ring-4 focus:ring-blue-500/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
       >
-        {loading ? "Resetting..." : "RESET PASSWORD"}
+        {loading ? "Resetting..." : "Reset Password"}
       </button>
-      <div style={{ textAlign: 'center', color: '#878787', fontSize: '14px' }}>
-        <a href="/account/login" style={{ color: '#2874f0', fontWeight: 600, textDecoration: 'none' }}>← Back to Login</a>
-      </div>
     </form>
   );
 }
 
 export default function ResetPasswordPage() {
   return (
-    <div style={{ minHeight: '100vh', background: '#f1f3f6', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-      <style>{`
-        .c9-auth-card { display: flex; width: 100%; max-width: 750px; box-shadow: 0 4px 24px rgba(0,0,0,0.15); border-radius: 4px; overflow: hidden; }
-        .c9-auth-left { background: #2874f0; flex: 0 0 40%; padding: 40px 32px; color: #fff; display: flex; flex-direction: column; justify-content: space-between; }
-        .c9-auth-right { flex: 1; background: #fff; padding: 40px 32px; }
-        @media (max-width: 540px) {
-          .c9-auth-card { flex-direction: column; }
-          .c9-auth-left { flex: unset; padding: 24px 20px; flex-direction: row; align-items: center; justify-content: space-between; }
-          .c9-auth-right { padding: 24px 20px; }
-        }
-      `}</style>
-      <div className="c9-auth-card">
-        <div className="c9-auth-left">
-          <div>
-            <h2 style={{ fontSize: '26px', fontWeight: 700, marginBottom: '12px', lineHeight: 1.3 }}>Create New Password</h2>
-            <p style={{ fontSize: '15px', opacity: 0.85, lineHeight: 1.6 }}>Your new password must be different from the previous one.</p>
-          </div>
-          <div style={{ fontSize: '56px', marginTop: '32px' }}>🔑</div>
+    <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <Link href="/" className="inline-flex items-center gap-2">
+            <img src="/logo.svg" alt="Computer9" className="w-10 h-10" />
+            <span className="text-2xl font-bold text-gray-900">
+              Computer<span className="text-blue-600">9</span>
+            </span>
+          </Link>
+          <h1 className="mt-6 text-2xl font-bold text-gray-900">Set new password</h1>
+          <p className="mt-2 text-sm text-gray-500">Choose a strong password of at least 6 characters</p>
         </div>
-        <div className="c9-auth-right">
-          <Suspense fallback={<p>Loading...</p>}>
+
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8">
+          <Suspense fallback={<p className="text-center text-gray-500 text-sm">Loading...</p>}>
             <ResetPasswordForm />
           </Suspense>
         </div>
+
+        <p className="mt-6 text-center">
+          <Link href="/account/login" className="text-sm text-gray-500 hover:text-gray-700">
+            ← Back to Sign In
+          </Link>
+        </p>
       </div>
     </div>
   );

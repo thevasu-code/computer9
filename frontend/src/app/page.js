@@ -12,7 +12,7 @@ export default async function Home() {
     await connectDB();
     const [raw, rawCategories] = await Promise.all([
       Product.find()
-        .select('name price originalPrice images image category')
+        .select('name slug price originalPrice images image category brand stock rating reviews createdAt')
         .lean(),
       Category.find({ isActive: true })
         .sort({ order: 1, name: 1 })

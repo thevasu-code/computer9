@@ -1,11 +1,10 @@
-
-
 import "./globals.css";
-import Header from "../components/Header";
-import Footer from "../components/Footer";
-import ToastProvider from "../components/ToastProvider";
-import UserViewTracker from "../components/UserViewTracker";
-import { CartProvider } from "../context/CartContext";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import MobileBottomNav from "@/components/MobileBottomNav";
+import ToastProvider from "@/components/ToastProvider";
+import UserViewTracker from "@/components/UserViewTracker";
+import { CartProvider } from "@/context/CartContext";
 import { DEFAULT_DESCRIPTION, DEFAULT_TITLE, SITE_NAME, getSiteUrl } from "@/lib/site";
 
 const siteUrl = getSiteUrl();
@@ -52,17 +51,19 @@ export default function RootLayout({ children }) {
         <link rel="icon" href="/logo.svg" type="image/svg+xml" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+          rel="stylesheet"
+        />
       </head>
-      <body style={{ fontFamily: "Roboto, 'Helvetica Neue', Arial, sans-serif", background: '#f1f3f6', margin: 0, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <body className="bg-gray-50 text-gray-900 antialiased min-h-screen flex flex-col font-sans">
         <CartProvider>
           <ToastProvider />
           <UserViewTracker />
           <Header />
-          <div style={{ flex: 1, background: '#f1f3f6' }}>
-            {children}
-          </div>
+          <main className="flex-1">{children}</main>
           <Footer />
+          <MobileBottomNav />
         </CartProvider>
       </body>
     </html>

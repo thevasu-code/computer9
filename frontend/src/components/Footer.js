@@ -1,131 +1,122 @@
 import Link from "next/link";
+import { Phone, Mail, MapPin } from "lucide-react";
 
 const FOOTER_LINKS = {
   shop: [
     { label: "All Products", href: "/shop" },
-    { label: "Laptops", href: "/shop" },
-    { label: "Components", href: "/shop" },
-    { label: "Accessories", href: "/shop" },
+    { label: "Laptops", href: "/shop?category=Laptop" },
+    { label: "Components", href: "/shop?category=Components" },
+    { label: "Accessories", href: "/shop?category=Accessories" },
   ],
   support: [
     { label: "My Account", href: "/account/dashboard" },
     { label: "Track Orders", href: "/account/dashboard" },
     { label: "Wishlist", href: "/account/dashboard" },
-    { label: "Help Center", href: "/account" },
+    { label: "Contact Us", href: "/account" },
   ],
   policy: [
     { label: "Privacy Policy", href: "/privacy-policy" },
-    { label: "Terms and Conditions", href: "/terms-and-conditions" },
-    { label: "Return and Refund", href: "/return-and-refund" },
-    { label: "Shipping Information", href: "/shipping-information" },
+    { label: "Terms & Conditions", href: "/terms-and-conditions" },
+    { label: "Return & Refund", href: "/return-and-refund" },
+    { label: "Shipping Info", href: "/shipping-information" },
   ],
 };
 
-function FooterLinkGroup({ title, items }) {
-  return (
-    <div className="footer-link-group">
-      <h3 style={{ color: "#fff", fontSize: "14px", fontWeight: 700, marginBottom: "12px", letterSpacing: "0.2px" }}>
-        {title}
-      </h3>
-      <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: "8px" }}>
-        {items.map((item) => (
-          <li key={item.label}>
-            <Link href={item.href} style={{ color: "#d4def0", textDecoration: "none", fontSize: "13px" }}>
-              {item.label}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
 export default function Footer() {
   return (
-    <footer style={{ background: "linear-gradient(130deg, #0f2c5d 0%, #133e7f 60%, #0d5e8c 100%)", color: "#fff", marginTop: "28px" }}>
-      <div className="footer-wrap" style={{ maxWidth: "1280px", margin: "0 auto", padding: "26px 16px 14px" }}>
-        <div className="footer-grid" style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr 1fr 1fr", gap: "24px" }}>
-          <div className="footer-company">
-            <h2 style={{ fontSize: "22px", margin: 0, fontWeight: 800 }}>
-              Computer9
-            </h2>
-            <p className="footer-company-desc" style={{ marginTop: "10px", color: "#d4def0", fontSize: "13px", lineHeight: 1.6, maxWidth: "360px" }}>
-              Trusted electronics and computer store for desktops, laptops, components, and accessories with secure checkout and fast delivery.
+    <footer className="bg-gray-900 text-gray-300 mt-auto">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+          {/* Brand */}
+          <div className="sm:col-span-2 lg:col-span-1">
+            <Link href="/" className="inline-block">
+              <h2 className="text-2xl font-bold text-white">
+                Computer<span className="text-blue-400">9</span>
+              </h2>
+            </Link>
+            <p className="mt-3 text-sm text-gray-400 leading-relaxed max-w-xs">
+              Your trusted destination for computers, components, and accessories with secure checkout and fast delivery across India.
             </p>
-            <div className="footer-contact" style={{ marginTop: "14px", fontSize: "13px", color: "#e5edfb", lineHeight: 1.75 }}>
-              <div><strong>Contact:</strong> +91 97519 78686</div>
-              <div><strong>Email:</strong> info@computer9.in</div>
-              <div>
-                <strong>Office:</strong> Luciya City Centre, Shop 509, Nagarathpete,
-                Bengaluru 560002
+            <div className="mt-5 space-y-2.5">
+              <div className="flex items-center gap-2.5 text-sm">
+                <Phone size={14} className="text-blue-400 shrink-0" />
+                <span>+91 97519 78686</span>
+              </div>
+              <div className="flex items-center gap-2.5 text-sm">
+                <Mail size={14} className="text-blue-400 shrink-0" />
+                <span>info@computer9.in</span>
+              </div>
+              <div className="flex items-start gap-2.5 text-sm">
+                <MapPin size={14} className="text-blue-400 shrink-0 mt-0.5" />
+                <span>Luciya City Centre, Shop 509, Nagarathpete, Bengaluru 560002</span>
               </div>
             </div>
           </div>
 
-          <div className="footer-col-shop">
-            <FooterLinkGroup title="Shop" items={FOOTER_LINKS.shop} />
+          {/* Shop Links */}
+          <div>
+            <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">Shop</h3>
+            <ul className="space-y-2.5">
+              {FOOTER_LINKS.shop.map((item) => (
+                <li key={item.label}>
+                  <Link href={item.href} className="text-sm text-gray-400 hover:text-white transition-colors">
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
-          <div className="footer-col-support">
-            <FooterLinkGroup title="Customer Support" items={FOOTER_LINKS.support} />
+
+          {/* Support Links */}
+          <div>
+            <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">Support</h3>
+            <ul className="space-y-2.5">
+              {FOOTER_LINKS.support.map((item) => (
+                <li key={item.label}>
+                  <Link href={item.href} className="text-sm text-gray-400 hover:text-white transition-colors">
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
-          <div className="footer-col-policy">
-            <FooterLinkGroup title="Policy" items={FOOTER_LINKS.policy} />
+
+          {/* Policy Links */}
+          <div>
+            <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">Policies</h3>
+            <ul className="space-y-2.5">
+              {FOOTER_LINKS.policy.map((item) => (
+                <li key={item.label}>
+                  <Link href={item.href} className="text-sm text-gray-400 hover:text-white transition-colors">
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
 
-        <div className="footer-bottom" style={{ borderTop: "1px solid rgba(255,255,255,0.2)", marginTop: "20px", paddingTop: "12px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
-          <p className="footer-copy" style={{ margin: 0, fontSize: "12px", color: "#d4def0" }}>
-            Copyright {new Date().getFullYear()} Computer9. All rights reserved.
+        {/* Bottom Bar */}
+        <div className="mt-10 pt-6 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-xs text-gray-500">
+            &copy; {new Date().getFullYear()} Computer9. All rights reserved.
           </p>
-          <div className="footer-trust" style={{ display: "flex", gap: "12px", fontSize: "12px", color: "#d4def0", flexWrap: "wrap" }}>
-            <span>Secure Payments</span>
-            <span>Easy Returns</span>
-            <span>Fast Shipping</span>
-            <span>24x7 Support</span>
+          <div className="flex items-center gap-6 text-xs text-gray-500">
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+              Secure Payments
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+              Fast Shipping
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
+              Easy Returns
+            </span>
           </div>
         </div>
       </div>
-
-      <style>{`
-        @media (max-width: 980px) {
-          .footer-grid {
-            grid-template-columns: 1fr 1fr;
-          }
-        }
-        @media (max-width: 620px) {
-          .footer-wrap {
-            padding: 22px 12px 14px;
-          }
-          .footer-grid {
-            grid-template-columns: 1fr;
-            gap: 18px;
-          }
-          .footer-company-desc {
-            display: none;
-          }
-          .footer-col-support,
-          .footer-col-policy,
-          .footer-trust {
-            display: none;
-          }
-          .footer-company {
-            border-bottom: 1px solid rgba(255,255,255,0.2);
-            padding-bottom: 10px;
-          }
-          .footer-link-group ul {
-            grid-template-columns: 1fr 1fr;
-            gap: 6px;
-          }
-          .footer-bottom {
-            margin-top: 12px;
-            padding-top: 10px;
-          }
-          .footer-copy {
-            text-align: center;
-            width: 100%;
-          }
-        }
-      `}</style>
     </footer>
   );
 }

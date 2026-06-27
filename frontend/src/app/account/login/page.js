@@ -1,6 +1,8 @@
 "use client";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Mail, Lock, ArrowRight } from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -36,66 +38,86 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f1f3f6', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-      <style>{`
-        .c9-auth-card { display: flex; width: 100%; max-width: 750px; box-shadow: 0 4px 24px rgba(0,0,0,0.15); border-radius: 4px; overflow: hidden; }
-        .c9-auth-left { background: #2874f0; flex: 0 0 40%; padding: 40px 32px; color: #fff; display: flex; flex-direction: column; justify-content: space-between; }
-        .c9-auth-right { flex: 1; background: #fff; padding: 40px 32px; }
-        @media (max-width: 540px) {
-          .c9-auth-card { flex-direction: column; }
-          .c9-auth-left { flex: unset; padding: 24px 20px; flex-direction: row; align-items: center; justify-content: space-between; }
-          .c9-auth-right { padding: 24px 20px; }
-        }
-      `}</style>
-      <div className="c9-auth-card">
-        {/* Left panel */}
-        <div className="c9-auth-left">
-          <div>
-            <h2 style={{ fontSize: '26px', fontWeight: 700, marginBottom: '12px', lineHeight: 1.3 }}>Login</h2>
-            <p style={{ fontSize: '15px', opacity: 0.85, lineHeight: 1.6 }}>Get access to your Orders, Wishlist and Recommendations</p>
-          </div>
-          <div style={{ fontSize: '56px', marginTop: '32px' }}>💻</div>
+    <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-md">
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <Link href="/" className="inline-flex items-center gap-2">
+            <img src="/logo.svg" alt="Computer9" className="w-10 h-10" />
+            <span className="text-2xl font-bold text-gray-900">
+              Computer<span className="text-blue-600">9</span>
+            </span>
+          </Link>
+          <h1 className="mt-6 text-2xl font-bold text-gray-900">Welcome back</h1>
+          <p className="mt-2 text-sm text-gray-500">Sign in to access your orders and wishlist</p>
         </div>
-        {/* Right panel */}
-        <div className="c9-auth-right">
-          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <input
-              type="email"
-              placeholder="Enter Email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-              style={{ border: 'none', borderBottom: '2px solid #e0e0e0', outline: 'none', padding: '10px 0', fontSize: '15px', width: '100%' }}
-              onFocus={e => e.target.style.borderBottomColor = '#2874f0'}
-              onBlur={e => e.target.style.borderBottomColor = '#e0e0e0'}
-            />
-            <input
-              type="password"
-              placeholder="Enter Password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-              style={{ border: 'none', borderBottom: '2px solid #e0e0e0', outline: 'none', padding: '10px 0', fontSize: '15px', width: '100%' }}
-              onFocus={e => e.target.style.borderBottomColor = '#2874f0'}
-              onBlur={e => e.target.style.borderBottomColor = '#e0e0e0'}
-            />
-            {error && <div style={{ color: '#ff4444', fontSize: '13px' }}>{error}</div>}
-            <div style={{ textAlign: 'right' }}>
-              <a href="/account/forgot-password" style={{ color: '#2874f0', fontSize: '13px', textDecoration: 'none' }}>Forgot Password?</a>
+
+        {/* Form */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8">
+          <form onSubmit={handleLogin} className="space-y-5">
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
+                Email address
+              </label>
+              <div className="relative">
+                <Mail size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  id="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-all"
+                />
+              </div>
             </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                  Password
+                </label>
+                <Link href="/account/forgot-password" className="text-xs text-blue-600 hover:text-blue-700 font-medium">
+                  Forgot password?
+                </Link>
+              </div>
+              <div className="relative">
+                <Lock size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-all"
+                />
+              </div>
+            </div>
+
+            {error && (
+              <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-4 py-2.5">
+                {error}
+              </div>
+            )}
+
             <button
               type="submit"
               disabled={loading}
-              style={{ background: '#fb641b', color: '#fff', border: 'none', borderRadius: '2px', padding: '14px', fontSize: '15px', fontWeight: 600, cursor: 'pointer', letterSpacing: '0.5px' }}
+              className="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 focus:ring-4 focus:ring-blue-500/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {loading ? "Logging in..." : "LOGIN"}
+              {loading ? "Signing in..." : <>Sign In <ArrowRight size={16} /></>}
             </button>
           </form>
-          <div style={{ marginTop: '20px', textAlign: 'center', color: '#878787', fontSize: '14px' }}>
-            New to Computer9?{' '}
-            <a href="/account/register" style={{ color: '#2874f0', fontWeight: 600, textDecoration: 'none' }}>Create an account</a>
-          </div>
         </div>
+
+        <p className="mt-6 text-center text-sm text-gray-500">
+          New to Computer9?{" "}
+          <Link href="/account/register" className="text-blue-600 font-semibold hover:text-blue-700">
+            Create an account
+          </Link>
+        </p>
       </div>
     </div>
   );
