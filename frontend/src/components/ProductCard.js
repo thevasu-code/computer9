@@ -55,7 +55,7 @@ export default function ProductCard({ product, priority = false }) {
         <div className="relative aspect-square bg-white flex items-center justify-center p-5 overflow-hidden border-b border-gray-50">
           <img
             src={imgSrc}
-            alt={product.name}
+            alt={`Buy ${product.name} online at best price - Computer9`}
             className="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105"
             loading={priority ? "eager" : "lazy"}
             fetchPriority={priority ? "high" : "auto"}

@@ -8,11 +8,18 @@ export const revalidate = 60;
 export const metadata = {
   title: "Shop Computers & Accessories",
   description:
-    "Browse laptops, desktops, components, networking gear and accessories at Computer9. Filter by price, brand, category and specifications.",
+    "Browse laptops, desktops, components, networking gear and accessories at Computer9. Filter by price, brand, category and specifications. Best prices in India with fast delivery.",
+  alternates: { canonical: "/shop" },
   openGraph: {
     title: "Shop Computers & Accessories | Computer9",
     description:
-      "Browse laptops, desktops, components, networking gear and accessories at Computer9.",
+      "Browse laptops, desktops, components, networking gear and accessories. Best prices with secure checkout.",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "Shop Computers & Accessories | Computer9",
+    description: "Browse laptops, desktops, components and accessories at best prices.",
   },
 };
 

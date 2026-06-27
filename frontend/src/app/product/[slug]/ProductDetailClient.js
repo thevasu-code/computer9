@@ -6,7 +6,7 @@ import { ShoppingCart, Check, Share2, Minus, Plus, Package, Shield, Truck, Star,
 import { trackProductView } from "@/components/RecentlyViewed";
 import RecentlyViewed from "@/components/RecentlyViewed";
 
-export default function ProductDetailClient({ product }) {
+export default function ProductDetailClient({ product, relatedProducts = [] }) {
   const [quantity, setQuantity] = useState(1);
   const [selectedImg, setSelectedImg] = useState(0);
   const { addToCart } = useCart();
@@ -106,7 +106,7 @@ export default function ProductDetailClient({ product }) {
                     onMouseMove={handleMouseMove}
                     onMouseLeave={() => setZoom((z) => ({ ...z, active: false }))}
                   >
-                    <img src={mainImg} alt={product.name}
+                    <img src={mainImg} alt={`Buy ${product.name} online at best price in India - Computer9`}
                       className="max-h-full max-w-full object-contain select-none pointer-events-none"
                       style={{ transform: zoom.active ? "scale(2.5)" : "scale(1)", transformOrigin: `${zoom.x}% ${zoom.y}%`, transition: zoom.active ? "none" : "transform 0.2s" }} />
                   </div>
@@ -253,6 +253,34 @@ export default function ProductDetailClient({ product }) {
               )}
             </div>
           </div>
+        )}
+
+        {/* #3 Related Products */}
+        {relatedProducts.length > 0 && (
+          <section className="mt-8">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">Customers Also Bought</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {relatedProducts.map((rp) => {
+                const rpImg = rp.images?.[0]?.startsWith("http") ? rp.images[0] : "/logo.svg";
+                const rpDiscount = rp.originalPrice && rp.price ? Math.round((1 - rp.price / rp.originalPrice) * 100) : null;
+                return (
+                  <Link key={rp._id} href={`/product/${rp.slug || rp._id}`}
+                    className="bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-md hover:border-gray-200 transition-all group">
+                    <div className="aspect-square bg-white flex items-center justify-center p-4 border-b border-gray-50">
+                      <img src={rpImg} alt={`Buy ${rp.name} online at best price - Computer9`} className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform" />
+                    </div>
+                    <div className="p-3">
+                      <p className="text-xs text-gray-700 line-clamp-2 leading-tight font-medium">{rp.name}</p>
+                      <div className="mt-2 flex items-baseline gap-1.5">
+                        <span className="text-sm font-bold text-gray-900">₹{rp.price?.toLocaleString("en-IN")}</span>
+                        {rpDiscount > 0 && <span className="text-[10px] text-green-600 font-semibold">{rpDiscount}% off</span>}
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
         )}
 
         {/* #20 Recently Viewed */}

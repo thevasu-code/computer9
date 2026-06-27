@@ -11,7 +11,7 @@ const FOOTER_LINKS = {
   support: [
     { label: "My Account", href: "/account/dashboard" },
     { label: "Track Orders", href: "/account/dashboard" },
-    { label: "Wishlist", href: "/account/dashboard" },
+    { label: "Blog", href: "/blog" },
     { label: "Contact Us", href: "/account" },
   ],
   policy: [
