@@ -189,7 +189,7 @@ export default function ProductDetailClient({ product, relatedProducts = [] }) {
                 <div className="flex gap-2.5">
                   <button onClick={() => { if (!product.stock) return; addToCart(product, quantity); setAdded(true); setTimeout(() => setAdded(false), 1500); }}
                     disabled={added || !product.stock}
-                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${added ? "bg-green-50 text-green-700 border border-green-200" : product.stock > 0 ? "bg-blue-600 text-white hover:bg-blue-700 shadow-sm active:scale-[0.98]" : "bg-gray-100 text-gray-400 cursor-not-allowed"}`}>
+                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${added ? "bg-green-50 text-green-700 border border-green-200" : product.stock > 0 ? "bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.98]" : "bg-gray-100 text-gray-400 cursor-not-allowed"}`}>
                     {added ? <><Check size={16} /> Added</> : product.stock > 0 ? <><ShoppingCart size={16} /> Add to Cart</> : "Out of Stock"}
                   </button>
                   <button onClick={handleShare} className="px-3.5 py-3 border border-gray-200 rounded-xl text-gray-500 hover:bg-gray-50 hover:text-blue-600 transition-colors" title="Share">

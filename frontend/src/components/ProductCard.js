@@ -82,21 +82,17 @@ export default function ProductCard({ product, priority = false }) {
         </Link>
 
         {/* Rating */}
-        <div className="flex items-center gap-1.5 mb-2">
-          {rating > 0 ? (
-            <>
-              <span className="inline-flex items-center gap-0.5 bg-green-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
-                {rating.toFixed(1)} <Star size={9} fill="white" />
-              </span>
-              <span className="text-[10px] text-gray-400">({reviewCount})</span>
-            </>
-          ) : (
-            <span className="text-[10px] text-gray-300">No ratings yet</span>
-          )}
-        </div>
+        {rating > 0 && (
+          <div className="flex items-center gap-1.5 mb-2">
+            <span className="inline-flex items-center gap-0.5 bg-green-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
+              {rating.toFixed(1)} <Star size={9} fill="white" />
+            </span>
+            <span className="text-[10px] text-gray-400">({reviewCount})</span>
+          </div>
+        )}
 
         {/* Price */}
-        <div className="mt-auto flex items-baseline gap-2 flex-wrap">
+        <div className="mt-auto mb-1 flex items-baseline justify-center gap-2 flex-wrap">
           <span className="text-lg font-bold text-gray-900">
             ₹{product.price?.toLocaleString("en-IN")}
           </span>
@@ -107,23 +103,25 @@ export default function ProductCard({ product, priority = false }) {
           )}
         </div>
         {discount > 0 && (
-          <p className="text-[10px] text-green-600 font-semibold mt-0.5">
+          <p className="text-[10px] text-green-600 font-semibold mt-0.5 text-center">
             You save ₹{((product.originalPrice - product.price)).toLocaleString("en-IN")}
           </p>
         )}
 
         {/* Add to Cart */}
-        <button
-          onClick={handleAddToCart}
-          disabled={added}
-          className={`mt-3 w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all duration-200 ${
-            added
-              ? "bg-green-50 text-green-700 border border-green-200"
-              : "bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.98] shadow-sm"
-          }`}
-        >
-          {added ? <><Check size={14} /> Added</> : <><ShoppingCart size={14} /> Add to Cart</>}
-        </button>
+        <div className="mt-2.5 flex justify-center">
+          <button
+            onClick={handleAddToCart}
+            disabled={added}
+            className={`px-3 py-1.5 rounded-md text-[11px] font-semibold transition-all duration-200 inline-flex items-center gap-1 ${
+              added
+                ? "bg-green-50 text-green-700 border border-green-200"
+                : "bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.98]"
+            }`}
+          >
+            {added ? <><Check size={11} /> Added</> : <><ShoppingCart size={11} /> Add to Cart</>}
+          </button>
+        </div>
       </div>
     </div>
   );
