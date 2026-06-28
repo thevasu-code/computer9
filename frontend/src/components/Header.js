@@ -27,13 +27,27 @@ export default function Header() {
     if (token) {
       try {
         const payload = JSON.parse(atob(token.split(".")[1]));
+        // Check token expiry
+        if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
+          localStorage.removeItem("token");
+          setUserName("");
+          setIsAdmin(false);
+          return;
+        }
         setIsAdmin(Boolean(payload?.isAdmin || payload?.role === "admin"));
         if (payload && payload.id) {
-          fetch(`/api/users/${payload.id}`)
+          fetch(`/api/users/${payload.id}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          })
             .then((res) => res.json())
-            .then((data) => { if (data && data.name) setUserName(data.name); });
+            .then((data) => { if (data && data.name) setUserName(data.name); })
+            .catch(() => {});
         }
-      } catch { /* ignore */ }
+      } catch {
+        localStorage.removeItem("token");
+        setUserName("");
+        setIsAdmin(false);
+      }
     } else {
       setUserName("");
       setIsAdmin(false);
@@ -290,7 +304,7 @@ export default function Header() {
                 </Link>
                 {/* Mega Menu Dropdown */}
                 <div className="absolute top-full left-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                  <div className="bg-white border border-gray-200 rounded-xl shadow-xl p-4 w-[420px] grid grid-cols-2 gap-1">
+                  <div className="bg-white border border-gray-200 rounded-xl shadow-xl p-4 w-[320px] lg:w-[400px] grid grid-cols-2 gap-1 max-w-[calc(100vw-2rem)] right-0 lg:right-auto lg:left-0">
                     {products.slice(0, 8).map((p) => p.category).filter((v, i, a) => v && a.indexOf(v) === i).slice(0, 8).map((cat) => (
                       <Link key={cat} href={`/shop?category=${encodeURIComponent(cat)}`}
                         className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg hover:bg-blue-50 transition-colors">

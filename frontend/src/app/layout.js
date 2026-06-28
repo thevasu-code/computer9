@@ -56,7 +56,7 @@ export default function RootLayout({ children }) {
           rel="stylesheet"
         />
       </head>
-      <body className="bg-gray-50 text-gray-900 antialiased min-h-screen flex flex-col font-sans">
+      <body className="bg-gray-50 text-gray-900 antialiased min-h-screen flex flex-col font-sans overflow-x-hidden">
         <CartProvider>
           <ToastProvider />
           <UserViewTracker />

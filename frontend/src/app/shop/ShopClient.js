@@ -14,6 +14,8 @@ export default function ShopClient({ initialProducts, categories, initialCategor
   const [inStockOnly, setInStockOnly] = useState(false);
   const [sortBy, setSortBy] = useState("featured");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
 
   const brands = useMemo(
     () => [...new Set(initialProducts.map((p) => p.brand).filter(Boolean))].sort(),
@@ -29,6 +31,8 @@ export default function ShopClient({ initialProducts, categories, initialCategor
 
   const filteredProducts = useMemo(() => {
     const searchLower = search.toLowerCase();
+    const min = minPrice ? Number(minPrice) : 0;
+    const max = maxPrice ? Number(maxPrice) : Infinity;
 
     const list = initialProducts.filter((p) => {
       const matchesSearch = !searchLower ||
@@ -38,7 +42,8 @@ export default function ShopClient({ initialProducts, categories, initialCategor
       const matchesCategory = !selectedCategory || p.category === selectedCategory;
       const matchesBrand = !selectedBrand || p.brand === selectedBrand;
       const matchesStock = !inStockOnly || Number(p.stock || 0) > 0;
-      return matchesSearch && matchesCategory && matchesBrand && matchesStock;
+      const matchesPrice = (p.price || 0) >= min && (p.price || 0) <= max;
+      return matchesSearch && matchesCategory && matchesBrand && matchesStock && matchesPrice;
     });
 
     switch (sortBy) {
@@ -57,7 +62,7 @@ export default function ShopClient({ initialProducts, categories, initialCategor
       default:
         return list;
     }
-  }, [initialProducts, search, selectedCategory, selectedBrand, inStockOnly, sortBy]);
+  }, [initialProducts, search, selectedCategory, selectedBrand, inStockOnly, sortBy, minPrice, maxPrice]);
 
   const updateFilter = (key, value) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -85,10 +90,12 @@ export default function ShopClient({ initialProducts, categories, initialCategor
     setSelectedBrand("");
     setInStockOnly(false);
     setSortBy("featured");
+    setMinPrice("");
+    setMaxPrice("");
     router.push("/shop", { scroll: false });
   };
 
-  const activeFilterCount = [selectedCategory, selectedBrand, inStockOnly, search].filter(Boolean).length;
+  const activeFilterCount = [selectedCategory, selectedBrand, inStockOnly, search, minPrice, maxPrice].filter(Boolean).length;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -210,6 +217,21 @@ export default function ShopClient({ initialProducts, categories, initialCategor
                 )}
               </div>
 
+              {/* Category */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Category</label>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => handleCategoryChange(e.target.value)}
+                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                >
+                  <option value="">All Categories</option>
+                  {categoryNames.map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+
               {/* Brand */}
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Brand</label>
@@ -235,6 +257,28 @@ export default function ShopClient({ initialProducts, categories, initialCategor
                 />
                 <span className="text-sm text-gray-700 group-hover:text-gray-900 font-medium">In Stock Only</span>
               </label>
+
+              {/* Price Range */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Price Range</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    placeholder="Min"
+                    value={minPrice}
+                    onChange={(e) => setMinPrice(e.target.value)}
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  />
+                  <span className="text-gray-400 text-xs">–</span>
+                  <input
+                    type="number"
+                    placeholder="Max"
+                    value={maxPrice}
+                    onChange={(e) => setMaxPrice(e.target.value)}
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  />
+                </div>
+              </div>
             </div>
           </aside>
 

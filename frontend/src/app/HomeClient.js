@@ -63,7 +63,7 @@ export default function HomeClient({ initialProducts, categories = [] }) {
     .filter((row) => row.products.length > 0);
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-16 sm:pb-0">
+    <div className="min-h-screen bg-gray-50 pb-16 sm:pb-0 overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 space-y-6">
         {/* Compact Banner */}
         <BannerCarousel />
@@ -131,7 +131,7 @@ export default function HomeClient({ initialProducts, categories = [] }) {
 
         {/* #7 Remaining rows — alternating backgrounds, horizontal scroll on mobile */}
         {categoryRows.slice(1).map((row, rowIdx) => (
-          <section key={row.name} className={`${rowIdx % 2 === 0 ? "bg-white" : "bg-gray-50"} -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-5 rounded-none sm:rounded-xl sm:mx-0 sm:px-5`}>
+          <section key={row.name} className={`${rowIdx % 2 === 0 ? "bg-white" : "bg-gray-100/50"} rounded-xl p-4 sm:p-5`}>
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-base font-bold text-gray-900">{row.name}</h2>
               <Link href={`/shop?category=${encodeURIComponent(row.name)}`}
