@@ -16,6 +16,8 @@ export default function ShopClient({ initialProducts, categories, initialCategor
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
+  const [minDiscount, setMinDiscount] = useState("");
+  const [minRating, setMinRating] = useState("");
 
   const brands = useMemo(
     () => [...new Set(initialProducts.map((p) => p.brand).filter(Boolean))].sort(),
@@ -33,6 +35,8 @@ export default function ShopClient({ initialProducts, categories, initialCategor
     const searchLower = search.toLowerCase();
     const min = minPrice ? Number(minPrice) : 0;
     const max = maxPrice ? Number(maxPrice) : Infinity;
+    const discountMin = minDiscount ? Number(minDiscount) : 0;
+    const ratingMin = minRating ? Number(minRating) : 0;
 
     const list = initialProducts.filter((p) => {
       const matchesSearch = !searchLower ||
@@ -43,7 +47,10 @@ export default function ShopClient({ initialProducts, categories, initialCategor
       const matchesBrand = !selectedBrand || p.brand === selectedBrand;
       const matchesStock = !inStockOnly || Number(p.stock || 0) > 0;
       const matchesPrice = (p.price || 0) >= min && (p.price || 0) <= max;
-      return matchesSearch && matchesCategory && matchesBrand && matchesStock && matchesPrice;
+      const productDiscount = p.originalPrice && p.price ? Math.round((1 - p.price / p.originalPrice) * 100) : 0;
+      const matchesDiscount = productDiscount >= discountMin;
+      const matchesRating = (p.rating || 0) >= ratingMin;
+      return matchesSearch && matchesCategory && matchesBrand && matchesStock && matchesPrice && matchesDiscount && matchesRating;
     });
 
     switch (sortBy) {
@@ -62,7 +69,7 @@ export default function ShopClient({ initialProducts, categories, initialCategor
       default:
         return list;
     }
-  }, [initialProducts, search, selectedCategory, selectedBrand, inStockOnly, sortBy, minPrice, maxPrice]);
+  }, [initialProducts, search, selectedCategory, selectedBrand, inStockOnly, sortBy, minPrice, maxPrice, minDiscount, minRating]);
 
   const updateFilter = (key, value) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -92,10 +99,12 @@ export default function ShopClient({ initialProducts, categories, initialCategor
     setSortBy("featured");
     setMinPrice("");
     setMaxPrice("");
+    setMinDiscount("");
+    setMinRating("");
     router.push("/shop", { scroll: false });
   };
 
-  const activeFilterCount = [selectedCategory, selectedBrand, inStockOnly, search, minPrice, maxPrice].filter(Boolean).length;
+  const activeFilterCount = [selectedCategory, selectedBrand, inStockOnly, search, minPrice, maxPrice, minDiscount, minRating].filter(Boolean).length;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -258,9 +267,47 @@ export default function ShopClient({ initialProducts, categories, initialCategor
                 <span className="text-sm text-gray-700 group-hover:text-gray-900 font-medium">In Stock Only</span>
               </label>
 
+              {/* Discount filter */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Discount</label>
+                <select
+                  value={minDiscount}
+                  onChange={(e) => setMinDiscount(e.target.value)}
+                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                >
+                  <option value="">Any Discount</option>
+                  <option value="10">10% or more</option>
+                  <option value="20">20% or more</option>
+                  <option value="30">30% or more</option>
+                  <option value="50">50% or more</option>
+                </select>
+              </div>
+
               {/* Price Range */}
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Price Range</label>
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {[
+                    { label: "Under ₹1K", min: "", max: "1000" },
+                    { label: "₹1K-5K", min: "1000", max: "5000" },
+                    { label: "₹5K-20K", min: "5000", max: "20000" },
+                    { label: "₹20K-50K", min: "20000", max: "50000" },
+                    { label: "₹50K+", min: "50000", max: "" },
+                  ].map((preset) => (
+                    <button
+                      key={preset.label}
+                      type="button"
+                      onClick={() => { setMinPrice(preset.min); setMaxPrice(preset.max); }}
+                      className={`px-2.5 py-1 text-[10px] font-medium rounded-md border transition-colors ${
+                        minPrice === preset.min && maxPrice === preset.max
+                          ? "bg-blue-50 border-blue-300 text-blue-700"
+                          : "border-gray-200 text-gray-600 hover:border-blue-200 hover:text-blue-600"
+                      }`}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
                 <div className="flex items-center gap-2">
                   <input
                     type="number"
@@ -279,6 +326,8 @@ export default function ShopClient({ initialProducts, categories, initialCategor
                   />
                 </div>
               </div>
+
+              {/* Rating filter - removed */}
             </div>
           </aside>
 

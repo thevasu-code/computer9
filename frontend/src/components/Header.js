@@ -292,34 +292,14 @@ export default function Header() {
                 {mobileSearchOpen ? <X size={20} /> : <Search size={20} />}
               </button>
 
-              {/* Shop link with mega menu — desktop */}
-              <div className="hidden lg:block relative group">
-                <Link
-                  href="/shop"
-                  className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                >
-                  <Store size={16} />
-                  Shop
-                  <ChevronDown size={14} className="text-gray-400 group-hover:text-blue-500 transition-colors" />
-                </Link>
-                {/* Mega Menu Dropdown */}
-                <div className="absolute top-full left-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                  <div className="bg-white border border-gray-200 rounded-xl shadow-xl p-4 w-[320px] lg:w-[400px] grid grid-cols-2 gap-1 max-w-[calc(100vw-2rem)] right-0 lg:right-auto lg:left-0">
-                    {products.slice(0, 8).map((p) => p.category).filter((v, i, a) => v && a.indexOf(v) === i).slice(0, 8).map((cat) => (
-                      <Link key={cat} href={`/shop?category=${encodeURIComponent(cat)}`}
-                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg hover:bg-blue-50 transition-colors">
-                        <span className="w-2 h-2 rounded-full bg-blue-500" />
-                        <span className="text-sm text-gray-700 font-medium">{cat}</span>
-                      </Link>
-                    ))}
-                    <div className="col-span-2 border-t border-gray-100 pt-2 mt-1">
-                      <Link href="/shop" className="text-xs text-blue-600 font-semibold hover:text-blue-700">
-                        Browse All Products →
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              {/* Shop link — desktop */}
+              <Link
+                href="/shop"
+                className="hidden lg:flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+              >
+                <Store size={16} />
+                Shop
+              </Link>
 
               {/* Admin link */}
               {mounted && userName && isAdmin && (
